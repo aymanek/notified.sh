@@ -1,2 +1,4 @@
-// @notified.sh/shared — stub. Real exports land in Milestone 2.
-export const API_VERSION = "v1";
+export * from "./domain.js";
+export * from "./contracts.js";
+export * from "./constants.js";
+export * from "./crypto.js";
