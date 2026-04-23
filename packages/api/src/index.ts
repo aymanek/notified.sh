@@ -3,12 +3,16 @@ import type { HonoEnv, Env } from "./env.js";
 import { healthRoute } from "./routes/health.js";
 import { pairRoute } from "./routes/pair.js";
 import { unpairRoute } from "./routes/unpair.js";
+import { tgManagerRoute } from "./routes/tgManager.js";
+import { tgChildRoute } from "./routes/tgChild.js";
 import { log } from "./log.js";
 
 const app = new Hono<HonoEnv>();
 
 app.route("/", healthRoute);
 app.route("/", pairRoute);
+app.route("/", tgManagerRoute);
+app.route("/", tgChildRoute);
 app.route("/", unpairRoute);
 
 app.notFound((c) =>
