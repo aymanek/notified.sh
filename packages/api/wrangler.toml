@@ -1,0 +1,31 @@
+name = "notified-api"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Non-secret runtime vars (secrets go via `wrangler secret put`)
+APP_VERSION = "0.1.0"
+
+[triggers]
+crons = ["* * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "notified-prod"
+database_id = "ffffffff-ffff-ffff-ffff-ffffffffffff"  # replaced during `wrangler d1 create`
+migrations_dir = "migrations"
+
+# Rate limiting bindings — uncomment and set namespace_ids after `wrangler d1 create`.
+# Miniflare only supports period=10|60; production values differ. Wired in M9 hardening.
+# [[unsafe.bindings]]
+# name = "RL_PAIR"
+# type = "ratelimit"
+# namespace_id = "1001"
+# simple = { limit = 30, period = 60 }
+#
+# [[unsafe.bindings]]
+# name = "RL_NOTIFY"
+# type = "ratelimit"
+# namespace_id = "1002"
+# simple = { limit = 60, period = 60 }

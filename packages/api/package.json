@@ -3,12 +3,22 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "./dist/index.js",
   "scripts": {
     "build": "tsc -b",
-    "test": "vitest run --passWithNoTests"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run --passWithNoTests",
+    "set-webhook": "tsx scripts/set-webhook.ts"
   },
   "dependencies": {
-    "@notified.sh/shared": "workspace:*"
+    "@notified.sh/shared": "workspace:*",
+    "hono": "^4.7.7"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.6.0",
+    "@cloudflare/workers-types": "^4.20250409.0",
+    "tsx": "^4.19.3",
+    "vitest": "^2.1.0",
+    "wrangler": "^3.114.2"
   }
 }
