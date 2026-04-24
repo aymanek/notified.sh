@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { runStatus } from "./commands/status.js";
+import { runHookStop } from "./commands/_hookStop.js";
 import { redact } from "./redact.js";
 
 const PKG_VERSION = "0.1.0";
@@ -21,7 +22,19 @@ program
   .action(wrapCommand(runStatus));
 
 // M7: pair, test, unpair
-// M8: _hook stop (hidden)
+
+// notified _hook stop  (hidden — called by Claude Code StopFailure hook)
+program
+  .command("_hook stop", { hidden: true })
+  .description("Internal: called by Claude Code StopFailure hook")
+  .action(async () => {
+    try {
+      await runHookStop();
+    } catch {
+      // Never surface errors — must not block Claude Code
+      process.exit(0);
+    }
+  });
 
 program.parseAsync(process.argv).catch((err: unknown) => {
   handleFatalError(err);

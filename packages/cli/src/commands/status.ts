@@ -39,11 +39,14 @@ async function checkHookInstalled(): Promise<boolean> {
     const settingsPath = join(claudeDataDir(), "settings.json");
     const raw = await readFile(settingsPath, "utf8");
     const settings = JSON.parse(raw) as Record<string, unknown>;
-    const hooks = settings["hooks"] as Array<{ hooks?: Array<{ command?: string }> }> | undefined;
-    if (!Array.isArray(hooks)) return false;
-    return hooks.some((entry) =>
-      Array.isArray(entry.hooks) &&
-      entry.hooks.some((h) => typeof h.command === "string" && h.command.includes("notified _hook stop")),
+    // hooks is an object keyed by event type: { StopFailure: [{ matcher, hooks }] }
+    const hooks = settings["hooks"] as Record<string, Array<{ hooks?: Array<{ command?: string }> }>> | undefined;
+    if (typeof hooks !== "object" || hooks === null || Array.isArray(hooks)) return false;
+    const blocks = hooks["StopFailure"];
+    if (!Array.isArray(blocks)) return false;
+    return blocks.some((block) =>
+      Array.isArray(block.hooks) &&
+      block.hooks.some((h) => typeof h.command === "string" && h.command.includes("notified _hook stop")),
     );
   } catch {
     return false;

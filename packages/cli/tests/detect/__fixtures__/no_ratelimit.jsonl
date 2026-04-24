@@ -1,0 +1,2 @@
+{"type":"user","message":{"role":"user","content":"hello"},"timestamp":"2026-04-21T22:50:00.000Z","sessionId":"abc789"}
+{"type":"assistant","timestamp":"2026-04-21T22:51:00.000Z","message":{"id":"msg1","model":"claude-opus-4-7","role":"assistant","stop_reason":"end_turn","type":"message","content":[{"type":"text","text":"Here is my response."}],"usage":{"input_tokens":10,"output_tokens":5}},"sessionId":"abc789"}

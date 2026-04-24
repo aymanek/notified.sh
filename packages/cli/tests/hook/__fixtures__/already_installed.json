@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "StopFailure": [
+      {
+        "matcher": "rate_limit",
+        "hooks": [{ "type": "command", "command": "notified _hook stop", "timeout": 5 }]
+      }
+    ]
+  }
+}
