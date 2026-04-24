@@ -1,5 +1,8 @@
 import { Command } from "commander";
 import { runStatus } from "./commands/status.js";
+import { runPair } from "./commands/pair.js";
+import { runTest } from "./commands/test.js";
+import { runUnpair } from "./commands/unpair.js";
 import { runHookStop } from "./commands/_hookStop.js";
 import { redact } from "./redact.js";
 
@@ -21,7 +24,32 @@ program
   .description("Show paired state, hook install status, and API reachability")
   .action(wrapCommand(runStatus));
 
-// M7: pair, test, unpair
+// notified pair
+program
+  .command("pair")
+  .description("Pair with Telegram to receive limit-reset notifications")
+  .action(wrapCommand(runPair));
+
+// notified test
+program
+  .command("test")
+  .description("Send a test notification via Telegram")
+  .option("--kind <kind>", "Limit kind to test (session|weekly)", "session")
+  .action(async (opts: { kind: string }) => {
+    void checkForUpdate();
+    try {
+      const kind = opts.kind === "weekly" ? "weekly" : "session";
+      await runTest(kind);
+    } catch (err: unknown) {
+      handleFatalError(err);
+    }
+  });
+
+// notified unpair
+program
+  .command("unpair")
+  .description("Remove pairing, uninstall hook, delete local config")
+  .action(wrapCommand(runUnpair));
 
 // notified _hook stop  (hidden — called by Claude Code StopFailure hook)
 program
