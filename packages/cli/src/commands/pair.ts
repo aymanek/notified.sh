@@ -1,4 +1,4 @@
-import * as qrcode from "qrcode-terminal";
+import qrcode from "qrcode-terminal";
 import {
   PairStartResponseSchema,
   PairStatusResponseSchema,

@@ -3,6 +3,11 @@ main = "src/index.ts"
 compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Custom domain — Cloudflare provisions DNS automatically once zone is active
+routes = [
+  { pattern = "api.notified.sh", custom_domain = true },
+]
+
 [vars]
 # Non-secret runtime vars (secrets go via `wrangler secret put`)
 APP_VERSION = "0.1.0"
@@ -13,7 +18,7 @@ crons = ["* * * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "notified-prod"
-database_id = "ffffffff-ffff-ffff-ffff-ffffffffffff"  # replaced during `wrangler d1 create`
+database_id = "ab730a69-aa61-4499-80bd-e26ba6af550d"  # replaced during `wrangler d1 create`
 migrations_dir = "migrations"
 
 # Rate limiting bindings — uncomment and set namespace_ids after `wrangler d1 create`.

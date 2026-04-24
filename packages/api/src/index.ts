@@ -7,6 +7,7 @@ import { tgManagerRoute } from "./routes/tgManager.js";
 import { tgChildRoute } from "./routes/tgChild.js";
 import { notifyRoute } from "./routes/notify.js";
 import { testRoute } from "./routes/test.js";
+import { adminRoute } from "./routes/admin.js";
 import { runDispatch } from "./dispatch.js";
 import { log } from "./log.js";
 
@@ -19,6 +20,7 @@ app.route("/", tgChildRoute);
 app.route("/", notifyRoute);
 app.route("/", testRoute);
 app.route("/", unpairRoute);
+app.route("/", adminRoute);
 
 app.notFound((c) =>
   c.json({ error: { code: "not_found", message: "Route not found." } }, 404),
