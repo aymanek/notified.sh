@@ -3,7 +3,18 @@ import { PAIR_SESSION_TTL_SECONDS } from "@notified.sh/shared";
 import type { HonoEnv } from "../env.js";
 import type { PairingSession } from "../db.js";
 import { nanoid, nowSecs } from "../util.js";
+import { getMe } from "../tg.js";
 import { log } from "../log.js";
+
+// Cache within the Worker instance lifetime — avoids a getMe call on every pair request.
+let cachedManagerUsername: string | null = null;
+async function managerUsername(token: string): Promise<string> {
+  if (!cachedManagerUsername) {
+    const bot = await getMe(token);
+    cachedManagerUsername = bot.username;
+  }
+  return cachedManagerUsername;
+}
 
 export const pairRoute = new Hono<HonoEnv>();
 
@@ -22,7 +33,8 @@ pairRoute.post("/v1/pair", async (c) => {
   const suggested_username = `notified_${nanoid(8)}_bot`;
   const now = nowSecs();
   const expires_at = now + PAIR_SESSION_TTL_SECONDS;
-  const deep_link = `https://t.me/newbot/${c.env.MANAGER_BOT_USERNAME}/${suggested_username}?name=notified.sh`;
+  const mgr = await managerUsername(c.env.MANAGER_BOT_TOKEN);
+  const deep_link = `https://t.me/newbot/${mgr}/${suggested_username}?name=notified.sh`;
 
   await c.env.DB.prepare(
     `INSERT INTO pairing_sessions

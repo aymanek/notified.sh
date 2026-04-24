@@ -9,7 +9,6 @@ export interface Env {
   DB: D1Database;
   // Worker secrets (set via `wrangler secret put`)
   MANAGER_BOT_TOKEN: string;
-  MANAGER_BOT_USERNAME: string;
   /** Base64-encoded 32-byte AES-256 key for child-bot token encryption. */
   AES_KEY_B64: string;
   /** 64-hex-char secret: manager webhook auth + HMAC base for child webhooks. */
