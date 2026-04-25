@@ -87,26 +87,13 @@ describe("limit_kind inference", () => {
     expect(result!.limit_kind).toBe("session");
   });
 
-  it("classifies as weekly when reset is beyond 12h", async () => {
-    const nowSec = Math.floor(Date.now() / 1000);
-    const resetSec = nowSec + 20 * 3600; // 20 hours from now
-    const resetDate = new Date(resetSec * 1000);
-
-    const h = resetDate.getUTCHours();
-    const m = resetDate.getUTCMinutes();
-    const period = h < 12 ? "am" : "pm";
-    const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
-    const timeStr = m === 0
-      ? `${displayH}${period}`
-      : `${displayH}:${String(m).padStart(2, "0")}${period}`;
-
+  it("always returns session kind regardless of reset distance", async () => {
     const { detectRateLimit: detect } = await import("../../src/detect/matcher.js");
     const result = detect([{
       timestamp: new Date().toISOString(),
-      text: `You've hit your limit · resets ${timeStr} (UTC)`,
+      text: `You've hit your limit · resets 11:59pm (UTC)`,
     }]);
-
     expect(result).not.toBeNull();
-    expect(result!.limit_kind).toBe("weekly");
+    expect(result!.limit_kind).toBe("session");
   });
 });

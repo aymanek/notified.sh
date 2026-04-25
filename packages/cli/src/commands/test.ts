@@ -1,9 +1,8 @@
 import { TestResponseSchema } from "@notified.sh/shared";
-import type { LimitKind } from "@notified.sh/shared";
 import { post } from "../api-client.js";
 import { loadConfig, resolvedApiBase } from "../config.js";
 
-export async function runTest(kind: LimitKind): Promise<void> {
+export async function runTest(): Promise<void> {
   const config = await loadConfig();
   if (!config) {
     console.error("Not paired. Run `notified pair` first.");
@@ -14,7 +13,7 @@ export async function runTest(kind: LimitKind): Promise<void> {
   await post(
     TestResponseSchema,
     `${apiBase}/v1/test`,
-    { limit_kind: kind },
+    { limit_kind: "session" },
     config.device_token,
   );
 

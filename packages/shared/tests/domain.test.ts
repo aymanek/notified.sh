@@ -4,7 +4,6 @@ import {
   DetectedLimitEventSchema,
   messageFor,
   idempotencyKeyFor,
-  type LimitKind,
 } from "../src/domain.js";
 
 describe("LimitKindSchema", () => {
@@ -21,34 +20,12 @@ describe("LimitKindSchema", () => {
 });
 
 describe("messageFor", () => {
-  it("returns distinct templates per kind", () => {
+  it("returns the reset message for any kind", () => {
     const s = messageFor("session");
     const w = messageFor("weekly");
-    expect(s).not.toBe(w);
-    expect(s).toMatch(/session/i);
-    expect(w).toMatch(/weekly/i);
+    expect(s).toBe(w);
     expect(s).toContain("⏰");
-    expect(w).toContain("📅");
-  });
-
-  it("has coverage for every LimitKind via exhaustive switch", () => {
-    // If a new LimitKind is added, this switch will fail typecheck unless
-    // messageFor() is updated, catching the class of bug where a new kind
-    // ships without a matching copy string.
-    const check = (k: LimitKind): string => {
-      switch (k) {
-        case "session":
-          return messageFor(k);
-        case "weekly":
-          return messageFor(k);
-        default: {
-          const _exhaustive: never = k;
-          throw new Error(`unhandled LimitKind: ${_exhaustive}`);
-        }
-      }
-    };
-    expect(check("session")).toBe(messageFor("session"));
-    expect(check("weekly")).toBe(messageFor("weekly"));
+    expect(s).toMatch(/reset/i);
   });
 });
 

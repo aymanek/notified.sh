@@ -34,12 +34,10 @@ program
 program
   .command("test")
   .description("Send a test notification via Telegram")
-  .option("--kind <kind>", "Limit kind to test (session|weekly)", "session")
-  .action(async (opts: { kind: string }) => {
+  .action(async () => {
     void checkForUpdate();
     try {
-      const kind = opts.kind === "weekly" ? "weekly" : "session";
-      await runTest(kind);
+      await runTest();
     } catch (err: unknown) {
       handleFatalError(err);
     }

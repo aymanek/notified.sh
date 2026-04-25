@@ -1,8 +1,7 @@
-import type { LimitKind } from "@notified.sh/shared";
 import type { RateLimitLine } from "./jsonl.js";
 
 export type Detection = {
-  limit_kind: LimitKind;
+  limit_kind: "session";
   reset_at: number; // unix seconds
   confidence: "high" | "medium";
 };
@@ -39,18 +38,10 @@ function parseLine(line: RateLimitLine): Detection | null {
   if (reset_at < nowSec - 6 * 3600) return null;
 
   return {
-    limit_kind: inferLimitKind(reset_at, nowSec),
+    limit_kind: "session",
     reset_at,
     confidence: "high",
   };
-}
-
-/** Infer kind from how far out the reset is. */
-function inferLimitKind(reset_at: number, nowSec: number): LimitKind {
-  const deltaSec = reset_at - nowSec;
-  // Session resets within ~5h; weekly resets in ~7 days.
-  // 12h threshold covers both with headroom.
-  return deltaSec > 12 * 3600 ? "weekly" : "session";
 }
 
 /**

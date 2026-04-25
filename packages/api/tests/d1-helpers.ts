@@ -31,6 +31,7 @@ const DDL = [
     reset_at          INTEGER NOT NULL,
     status            TEXT    NOT NULL CHECK (status IN ('pending','sending','sent','failed')),
     created_at        INTEGER NOT NULL,
+    claimed_at        INTEGER,
     sent_at           INTEGER,
     last_error        TEXT,
     UNIQUE (device_token_hash, idempotency_key)

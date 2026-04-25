@@ -22,14 +22,14 @@ async function seedUser(overrides: { hash?: string; child_bot_id?: number } = {}
   return hash;
 }
 
-async function insertNotification(hash: string, resetAt: number, status = "pending") {
+async function insertNotification(hash: string, resetAt: number, status = "pending", claimedAt?: number) {
   const id = `notif-${Math.random().toString(36).slice(2)}`;
   await env.DB.prepare(
     `INSERT INTO notifications
-     (id, device_token_hash, limit_kind, idempotency_key, reset_at, status, created_at)
-     VALUES (?, ?, 'session', ?, ?, ?, ?)`,
+     (id, device_token_hash, limit_kind, idempotency_key, reset_at, status, claimed_at, created_at)
+     VALUES (?, ?, 'session', ?, ?, ?, ?, ?)`,
   )
-    .bind(id, hash, `session:${resetAt}`, resetAt, status, nowSecs())
+    .bind(id, hash, `session:${resetAt}`, resetAt, status, claimedAt ?? null, nowSecs())
     .run();
   return id;
 }
@@ -116,9 +116,10 @@ describe("runDispatch", () => {
   it("reaps stuck sending rows and re-delivers them", async () => {
     mockTgSuccess();
     const hash = await seedUser();
-    // Insert a row stuck in 'sending' older than 5 min
-    const staleReset = nowSecs() - STALE_RESET_DELTA;
-    const id = await insertNotification(hash, staleReset, "sending");
+    // Insert a row stuck in 'sending' with claimed_at older than STALE_SECONDS
+    const past = nowSecs() - 10;
+    const staleClaimedAt = nowSecs() - STALE_CLAIMED_DELTA;
+    const id = await insertNotification(hash, past, "sending", staleClaimedAt);
 
     await runDispatch(env as unknown as Parameters<typeof runDispatch>[0]);
 
@@ -152,5 +153,5 @@ describe("runDispatch", () => {
   });
 });
 
-// Reap threshold: rows with reset_at <= now - 300 (STALE_SECONDS in dispatch.ts)
-const STALE_RESET_DELTA = 310;
+// Reap threshold: rows with claimed_at <= now - 300 (STALE_SECONDS in dispatch.ts)
+const STALE_CLAIMED_DELTA = 310;

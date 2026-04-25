@@ -8,7 +8,8 @@ import { log } from "../log.js";
 
 // Cache within the Worker instance lifetime — avoids a getMe call on every pair request.
 let cachedManagerUsername: string | null = null;
-async function managerUsername(token: string): Promise<string> {
+async function managerUsername(token: string, envOverride?: string): Promise<string> {
+  if (envOverride) return envOverride;
   if (!cachedManagerUsername) {
     const bot = await getMe(token);
     cachedManagerUsername = bot.username;
@@ -33,7 +34,7 @@ pairRoute.post("/v1/pair", async (c) => {
   const suggested_username = `notified_${nanoid(8)}_bot`;
   const now = nowSecs();
   const expires_at = now + PAIR_SESSION_TTL_SECONDS;
-  const mgr = await managerUsername(c.env.MANAGER_BOT_TOKEN);
+  const mgr = await managerUsername(c.env.MANAGER_BOT_TOKEN, c.env.MANAGER_BOT_USERNAME);
   const deep_link = `https://t.me/newbot/${mgr}/${suggested_username}?name=notified.sh`;
 
   await c.env.DB.prepare(

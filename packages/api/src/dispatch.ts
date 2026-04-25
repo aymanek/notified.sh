@@ -26,8 +26,8 @@ export async function runDispatch(env: Env): Promise<void> {
 
 async function reapStuck(env: Env, now: number): Promise<void> {
   const { meta } = await env.DB.prepare(
-    `UPDATE notifications SET status = 'pending'
-     WHERE status = 'sending' AND reset_at <= ?`,
+    `UPDATE notifications SET status = 'pending', claimed_at = NULL
+     WHERE status = 'sending' AND claimed_at IS NOT NULL AND claimed_at <= ?`,
   )
     .bind(now - STALE_SECONDS)
     .run();
@@ -51,7 +51,7 @@ async function gc(env: Env, now: number): Promise<void> {
 async function claimDue(env: Env, now: number): Promise<Notification[]> {
   const { results } = await env.DB.prepare(
     `UPDATE notifications
-     SET status = 'sending'
+     SET status = 'sending', claimed_at = ?
      WHERE id IN (
        SELECT id FROM notifications
        WHERE status = 'pending' AND reset_at <= ?
@@ -59,9 +59,9 @@ async function claimDue(env: Env, now: number): Promise<Notification[]> {
        LIMIT ?
      )
      RETURNING id, device_token_hash, limit_kind, idempotency_key, reset_at,
-               status, created_at, sent_at, last_error`,
+               status, claimed_at, created_at, sent_at, last_error`,
   )
-    .bind(now, CLAIM_LIMIT)
+    .bind(now, now, CLAIM_LIMIT)
     .all<Notification>();
   return results;
 }

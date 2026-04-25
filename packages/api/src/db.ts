@@ -36,6 +36,7 @@ export type Notification = {
   reset_at: number;
   status: NotificationStatus;
   created_at: number;
+  claimed_at: number | null;
   sent_at: number | null;
   last_error: string | null;
 };

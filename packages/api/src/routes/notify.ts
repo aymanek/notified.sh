@@ -8,6 +8,13 @@ import { log } from "../log.js";
 export const notifyRoute = new Hono<HonoEnv>();
 
 notifyRoute.post("/v1/notify", requireAuth, async (c) => {
+  if (c.env.RL_NOTIFY) {
+    const { success } = await c.env.RL_NOTIFY.limit({ key: c.get("deviceTokenHash") });
+    if (!success) {
+      return c.json({ error: { code: "rate_limited", message: "Too many requests." } }, 429);
+    }
+  }
+
   const hash = c.get("deviceTokenHash");
 
   const parsed = NotifyRequestSchema.safeParse(await c.req.json());
