@@ -58,7 +58,9 @@ export async function runPair(): Promise<void> {
         paired_at: Math.floor(Date.now() / 1000),
       });
 
-      await installHook();
+      // Absolute path so Claude Code's hook env doesn't need notified on PATH
+      const hookCommand = `${process.execPath} ${process.argv[1]} _hook stop`;
+      await installHook(hookCommand);
 
       console.log(`\nPaired with @${status.child_bot_username}`);
       console.log("Hook installed. You'll get a Telegram message at each limit reset.");

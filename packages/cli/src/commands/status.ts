@@ -46,7 +46,7 @@ async function checkHookInstalled(): Promise<boolean> {
     if (!Array.isArray(blocks)) return false;
     return blocks.some((block) =>
       Array.isArray(block.hooks) &&
-      block.hooks.some((h) => typeof h.command === "string" && h.command.includes("notified _hook stop")),
+      block.hooks.some((h) => typeof h.command === "string" && h.command.includes("_hook stop")),
     );
   } catch {
     return false;

@@ -13,7 +13,7 @@ const HOOK_TIMEOUT_MS = 3_000;
 
 export async function runHookStop(): Promise<void> {
   const config = await loadConfig();
-  if (!config) return; // Not paired — nothing to do
+  if (!config) return;
 
   // 1. Find the transcript to scan
   const transcriptPath =
@@ -30,21 +30,25 @@ export async function runHookStop(): Promise<void> {
 
   const { limit_kind, reset_at } = detection;
   const idempotency_key = `${limit_kind}:${reset_at}`;
+  const apiBase = resolvedApiBase(config);
 
-  // 4. Dedup check
+  // 4. Load state + flush pending from previous failed runs first
   const state = await loadState();
-  const alreadySubmitted = state.submitted.some(
-    (e) => e.idempotency_key === idempotency_key,
-  );
-  if (alreadySubmitted) return;
-
-  // 5. Retry any pending from previous runs
   if (state.pending_submit.length > 0) {
-    await flushPending(state, config, resolvedApiBase(config));
+    await flushPending(state, config, apiBase);
+  }
+
+  // 5. Dedup: check submitted AND still-pending (after flush) to avoid double-POST
+  const alreadyDone =
+    state.submitted.some((e) => e.idempotency_key === idempotency_key) ||
+    state.pending_submit.some((e) => e.idempotency_key === idempotency_key);
+
+  if (alreadyDone) {
+    await saveState(state);
+    return;
   }
 
   // 6. POST /v1/notify
-  const apiBase = resolvedApiBase(config);
   try {
     const res = await post(
       NotifyResponseSchema,
@@ -61,24 +65,14 @@ export async function runHookStop(): Promise<void> {
         limit_kind,
         reset_at,
       });
-      // Remove from pending if it was there
-      state.pending_submit = state.pending_submit.filter(
-        (e) => e.idempotency_key !== idempotency_key,
-      );
     }
   } catch (err: unknown) {
-    // Save to pending for next run
-    const alreadyPending = state.pending_submit.some(
-      (e) => e.idempotency_key === idempotency_key,
-    );
-    if (!alreadyPending) {
-      state.pending_submit.push({
-        idempotency_key,
-        limit_kind,
-        reset_at,
-        last_error: err instanceof Error ? err.message : String(err),
-      });
-    }
+    state.pending_submit.push({
+      idempotency_key,
+      limit_kind,
+      reset_at,
+      last_error: err instanceof Error ? err.message : String(err),
+    });
   }
 
   await saveState(state);
@@ -93,10 +87,7 @@ async function flushPending(
   const stillPending: typeof state.pending_submit = [];
 
   for (const entry of state.pending_submit) {
-    // Skip entries whose reset is already past by more than 1h (no point)
-    if (entry.reset_at < nowSec - 3600) continue;
-
-    // Skip if already submitted
+    if (entry.reset_at < nowSec - 3600) continue; // stale, skip
     if (state.submitted.some((e) => e.idempotency_key === entry.idempotency_key)) continue;
 
     try {

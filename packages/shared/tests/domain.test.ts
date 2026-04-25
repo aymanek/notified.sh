@@ -7,12 +7,12 @@ import {
 } from "../src/domain.js";
 
 describe("LimitKindSchema", () => {
-  it("accepts session and weekly", () => {
+  it("accepts session", () => {
     expect(LimitKindSchema.parse("session")).toBe("session");
-    expect(LimitKindSchema.parse("weekly")).toBe("weekly");
   });
 
-  it("rejects unknown kinds", () => {
+  it("rejects all other values", () => {
+    expect(() => LimitKindSchema.parse("weekly")).toThrow();
     expect(() => LimitKindSchema.parse("monthly")).toThrow();
     expect(() => LimitKindSchema.parse("")).toThrow();
     expect(() => LimitKindSchema.parse(null)).toThrow();

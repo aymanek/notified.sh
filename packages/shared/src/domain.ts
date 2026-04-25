@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const LimitKindSchema = z.enum(["session", "weekly"]);
+export const LimitKindSchema = z.literal("session");
 export type LimitKind = z.infer<typeof LimitKindSchema>;
 
 export const ConfidenceSchema = z.enum(["high", "medium"]);

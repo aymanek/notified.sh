@@ -119,10 +119,11 @@ describe("NotifyResponseSchema", () => {
 
 describe("TestRequestSchema / TestResponseSchema", () => {
   it("round-trips a test request", () => {
-    expect(TestRequestSchema.parse({ limit_kind: "weekly" })).toEqual({ limit_kind: "weekly" });
+    expect(TestRequestSchema.parse({ limit_kind: "session" })).toEqual({ limit_kind: "session" });
   });
 
-  it("rejects a bad kind", () => {
+  it("rejects any non-session kind", () => {
+    expect(() => TestRequestSchema.parse({ limit_kind: "weekly" })).toThrow();
     expect(() => TestRequestSchema.parse({ limit_kind: "daily" })).toThrow();
   });
 

@@ -2,19 +2,16 @@ import { readFile, writeFile, copyFile, mkdir } from "fs/promises";
 import { join, dirname } from "path";
 import { claudeDataDir } from "../paths.js";
 
-const HOOK_COMMAND = "notified _hook stop";
+const HOOK_SIGNATURE = "_hook stop"; // substring used to identify our hook entries
 const HOOK_EVENT = "StopFailure";
 const HOOK_MATCHER = "rate_limit";
 const SETTINGS_FILE = () => join(claudeDataDir(), "settings.json");
 
-const HOOK_ENTRY = { type: "command", command: HOOK_COMMAND, timeout: 5 } as const;
-
 type HookEntry = { type: string; command: string; timeout?: number };
 type HookBlock = { matcher: string; hooks: HookEntry[] };
-// settings.hooks is an object keyed by event type (Stop, StopFailure, etc.)
 type Settings = { hooks?: Record<string, HookBlock[]> };
 
-export async function installHook(): Promise<void> {
+export async function installHook(command: string): Promise<void> {
   const path = SETTINGS_FILE();
 
   let settings: Settings = {};
@@ -29,9 +26,7 @@ export async function installHook(): Promise<void> {
 
   if (raw !== null) {
     if (typeof settings !== "object" || settings === null || Array.isArray(settings)) {
-      throw new Error(
-        `${path} has unexpected format. Please fix it manually and retry.`,
-      );
+      throw new Error(`${path} has unexpected format. Please fix it manually and retry.`);
     }
     await copyFile(path, `${path}.bak`);
   }
@@ -43,15 +38,16 @@ export async function installHook(): Promise<void> {
   }
 
   const eventBlocks = settings.hooks[HOOK_EVENT] ?? [];
-  // Find existing block for our matcher to merge into
   const existing = eventBlocks.find(
     (b) => b.matcher === HOOK_MATCHER && Array.isArray(b.hooks),
   );
 
+  const entry: HookEntry = { type: "command", command, timeout: 5 };
+
   if (existing) {
-    existing.hooks.push({ ...HOOK_ENTRY });
+    existing.hooks.push(entry);
   } else {
-    eventBlocks.push({ matcher: HOOK_MATCHER, hooks: [{ ...HOOK_ENTRY }] });
+    eventBlocks.push({ matcher: HOOK_MATCHER, hooks: [entry] });
   }
 
   settings.hooks[HOOK_EVENT] = eventBlocks;
@@ -82,7 +78,7 @@ export async function uninstallHook(): Promise<void> {
   for (const block of eventBlocks) {
     if (!Array.isArray(block.hooks)) continue;
     const before = block.hooks.length;
-    block.hooks = block.hooks.filter((h) => h.command !== HOOK_COMMAND);
+    block.hooks = block.hooks.filter((h) => !h.command.includes(HOOK_SIGNATURE));
     if (block.hooks.length !== before) changed = true;
   }
 
@@ -105,6 +101,6 @@ export function isInstalled(settings: Settings): boolean {
   return eventBlocks.some(
     (block) =>
       Array.isArray(block.hooks) &&
-      block.hooks.some((h) => typeof h.command === "string" && h.command === HOOK_COMMAND),
+      block.hooks.some((h) => typeof h.command === "string" && h.command.includes(HOOK_SIGNATURE)),
   );
 }

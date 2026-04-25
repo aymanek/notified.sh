@@ -4,10 +4,7 @@ import { join } from "path";
 import { tmpdir } from "os";
 import { isInstalled, installHook, uninstallHook } from "../../src/hook/install.js";
 
-// We test the exported functions directly against temp files.
-// installHook/uninstallHook read SETTINGS_FILE from claudeDataDir() which we
-// cannot easily override without env var tricks. So we test isInstalled() in
-// isolation, and installHook/uninstallHook via a temp CLAUDE_CODE_DATA_DIR.
+const TEST_CMD = "/usr/bin/node /path/to/cli.js _hook stop";
 
 describe("isInstalled", () => {
   it("returns false for empty settings", () => {
@@ -26,7 +23,7 @@ describe("isInstalled", () => {
     })).toBe(false);
   });
 
-  it("returns false when our command not in StopFailure block", () => {
+  it("returns false when our signature not in any command", () => {
     expect(isInstalled({
       hooks: {
         StopFailure: [{ matcher: "rate_limit", hooks: [{ type: "command", command: "other cmd" }] }],
@@ -34,10 +31,18 @@ describe("isInstalled", () => {
     })).toBe(false);
   });
 
-  it("returns true when our command is present", () => {
+  it("returns true for absolute-path command containing _hook stop", () => {
     expect(isInstalled({
       hooks: {
-        StopFailure: [{ matcher: "rate_limit", hooks: [{ type: "command", command: "notified _hook stop", timeout: 5 }] }],
+        StopFailure: [{ matcher: "rate_limit", hooks: [{ type: "command", command: TEST_CMD }] }],
+      },
+    })).toBe(true);
+  });
+
+  it("returns true for legacy 'notified _hook stop' command", () => {
+    expect(isInstalled({
+      hooks: {
+        StopFailure: [{ matcher: "rate_limit", hooks: [{ type: "command", command: "notified _hook stop" }] }],
       },
     })).toBe(true);
   });
@@ -64,23 +69,24 @@ describe("installHook / uninstallHook (file-based)", () => {
   });
 
   it("creates settings.json with StopFailure hook when file is missing", async () => {
-    await installHook();
+    await installHook(TEST_CMD);
     const raw = await readFile(join(tmpDir, "settings.json"), "utf8");
     const settings = JSON.parse(raw) as { hooks: { StopFailure: unknown } };
     expect(settings.hooks).toBeDefined();
     expect(Array.isArray(settings.hooks.StopFailure)).toBe(true);
-    expect(JSON.stringify(settings)).toContain("notified _hook stop");
+    expect(JSON.stringify(settings)).toContain("_hook stop");
+    expect(JSON.stringify(settings)).toContain(TEST_CMD);
   });
 
   it("is idempotent — second install does not duplicate", async () => {
-    await installHook();
-    await installHook();
+    await installHook(TEST_CMD);
+    await installHook(TEST_CMD);
     const raw = await readFile(join(tmpDir, "settings.json"), "utf8");
     const settings = JSON.parse(raw) as {
       hooks: { StopFailure: Array<{ hooks: Array<{ command: string }> }> };
     };
     const commands = settings.hooks.StopFailure.flatMap((b) => b.hooks.map((h) => h.command));
-    expect(commands.filter((c) => c === "notified _hook stop")).toHaveLength(1);
+    expect(commands.filter((c) => c.includes("_hook stop"))).toHaveLength(1);
   });
 
   it("merges with existing hooks without destroying them", async () => {
@@ -90,11 +96,11 @@ describe("installHook / uninstallHook (file-based)", () => {
       },
     };
     await writeFile(join(tmpDir, "settings.json"), JSON.stringify(existing));
-    await installHook();
+    await installHook(TEST_CMD);
     const raw = await readFile(join(tmpDir, "settings.json"), "utf8");
     const settings = JSON.parse(raw) as { hooks: Record<string, unknown> };
     expect(settings.hooks["PreToolUse"]).toBeDefined();
-    expect(JSON.stringify(settings.hooks["StopFailure"])).toContain("notified _hook stop");
+    expect(JSON.stringify(settings.hooks["StopFailure"])).toContain("_hook stop");
   });
 
   it("uninstall removes only our command and leaves other hooks", async () => {
@@ -105,7 +111,7 @@ describe("installHook / uninstallHook (file-based)", () => {
           {
             matcher: "rate_limit",
             hooks: [
-              { type: "command", command: "notified _hook stop", timeout: 5 },
+              { type: "command", command: TEST_CMD, timeout: 5 },
               { type: "command", command: "other hook" },
             ],
           },
@@ -123,12 +129,12 @@ describe("installHook / uninstallHook (file-based)", () => {
     };
     expect(settings.hooks.PreToolUse).toBeDefined();
     const cmds = settings.hooks.StopFailure?.flatMap((b) => b.hooks.map((h) => h.command)) ?? [];
-    expect(cmds).not.toContain("notified _hook stop");
+    expect(cmds).not.toContain(TEST_CMD);
     expect(cmds).toContain("other hook");
   });
 
   it("uninstall removes empty StopFailure block entirely", async () => {
-    await installHook();
+    await installHook(TEST_CMD);
     await uninstallHook();
     const raw = await readFile(join(tmpDir, "settings.json"), "utf8");
     const settings = JSON.parse(raw) as { hooks: Record<string, unknown> };
