@@ -9,6 +9,17 @@ function fixture(name: string) {
   return join(FIXTURES, name);
 }
 
+function utcTimeStringFromNow(offsetSeconds: number) {
+  const resetDate = new Date((Math.floor(Date.now() / 1000) + offsetSeconds) * 1000);
+  const h = resetDate.getUTCHours();
+  const m = resetDate.getUTCMinutes();
+  const period = h < 12 ? "am" : "pm";
+  const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return m === 0
+    ? `${displayH}${period}`
+    : `${displayH}:${String(m).padStart(2, "0")}${period}`;
+}
+
 describe("readRateLimitLines", () => {
   it("extracts rate-limit lines from session fixture", async () => {
     const lines = await readRateLimitLines(fixture("session_simple.jsonl"));
@@ -29,16 +40,20 @@ describe("readRateLimitLines", () => {
 
 describe("detectRateLimit", () => {
   it("parses hour-only time (3am) and returns high confidence", async () => {
-    const lines = await readRateLimitLines(fixture("session_simple.jsonl"));
-    const result = detectRateLimit(lines);
+    const result = detectRateLimit([{
+      timestamp: new Date().toISOString(),
+      text: `You've hit your limit · resets ${utcTimeStringFromNow(5 * 3600)} (UTC)`,
+    }]);
     expect(result).not.toBeNull();
     expect(result!.confidence).toBe("high");
     expect(result!.reset_at).toBeGreaterThan(Math.floor(Date.now() / 1000));
   });
 
   it("parses hour:minute time (12:00pm)", async () => {
-    const lines = await readRateLimitLines(fixture("weekly_simple.jsonl"));
-    const result = detectRateLimit(lines);
+    const result = detectRateLimit([{
+      timestamp: new Date().toISOString(),
+      text: `You've hit your limit · resets ${utcTimeStringFromNow(90 * 60)} (UTC)`,
+    }]);
     expect(result).not.toBeNull();
     expect(result!.reset_at).toBeGreaterThan(0);
   });
@@ -49,9 +64,16 @@ describe("detectRateLimit", () => {
   });
 
   it("picks newest line in duplicate fixture", async () => {
-    const lines = await readRateLimitLines(fixture("duplicate.jsonl"));
-    expect(lines).toHaveLength(2);
-    // Both have same reset time so result should still parse
+    const lines = [
+      {
+        timestamp: new Date(Date.now() - 60_000).toISOString(),
+        text: `You've hit your limit · resets ${utcTimeStringFromNow(2 * 3600)} (UTC)`,
+      },
+      {
+        timestamp: new Date().toISOString(),
+        text: `You've hit your limit · resets ${utcTimeStringFromNow(3 * 3600)} (UTC)`,
+      },
+    ];
     const result = detectRateLimit(lines);
     expect(result).not.toBeNull();
   });
@@ -59,24 +81,10 @@ describe("detectRateLimit", () => {
 
 describe("reset time inference", () => {
   it("parses a reset within 12h", async () => {
-    // Create a line with a reset time ~5h from now
-    const nowSec = Math.floor(Date.now() / 1000);
-    const resetSec = nowSec + 5 * 3600;
-    const resetDate = new Date(resetSec * 1000);
-
-    // Format as e.g. "3:25am" in UTC for testing
-    const h = resetDate.getUTCHours();
-    const m = resetDate.getUTCMinutes();
-    const period = h < 12 ? "am" : "pm";
-    const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
-    const timeStr = m === 0
-      ? `${displayH}${period}`
-      : `${displayH}:${String(m).padStart(2, "0")}${period}`;
-
     const { detectRateLimit: detect } = await import("../../src/detect/matcher.js");
     const result = detect([{
       timestamp: new Date().toISOString(),
-      text: `You've hit your limit · resets ${timeStr} (UTC)`,
+      text: `You've hit your limit · resets ${utcTimeStringFromNow(5 * 3600)} (UTC)`,
     }]);
 
     expect(result).not.toBeNull();
@@ -91,5 +99,25 @@ describe("reset time inference", () => {
     }]);
     expect(result).not.toBeNull();
     expect(result!.reset_at).toBeGreaterThan(0);
+  });
+
+  it("does not roll stale same-day reset text into tomorrow", async () => {
+    const { detectRateLimit: detect } = await import("../../src/detect/matcher.js");
+    const staleReset = new Date(Date.now() - 11 * 3600 * 1000);
+    const staleTimestamp = new Date(staleReset.getTime() - 3600 * 1000).toISOString();
+    const h = staleReset.getUTCHours();
+    const m = staleReset.getUTCMinutes();
+    const period = h < 12 ? "am" : "pm";
+    const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    const timeStr = m === 0
+      ? `${displayH}${period}`
+      : `${displayH}:${String(m).padStart(2, "0")}${period}`;
+
+    const result = detect([{
+      timestamp: staleTimestamp,
+      text: `You've hit your limit · resets ${timeStr} (UTC)`,
+    }]);
+
+    expect(result).toBeNull();
   });
 });

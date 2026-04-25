@@ -28,7 +28,12 @@ function parseLine(line: RateLimitLine): Detection | null {
   const timeStr = m[1]!.trim();
   const tz = m[2]!.trim();
 
-  const reset_at = resolveNextOccurrence(timeStr, tz);
+  const referenceMs = Date.parse(line.timestamp);
+  const reset_at = resolveNextOccurrence(
+    timeStr,
+    tz,
+    Number.isFinite(referenceMs) ? referenceMs : Date.now(),
+  );
   if (reset_at === null) return null;
 
   const nowSec = Math.floor(Date.now() / 1000);
@@ -46,7 +51,7 @@ function parseLine(line: RateLimitLine): Detection | null {
  * Parse a time string like "3am" or "1:40am" in a given IANA timezone,
  * returning the next unix epoch (seconds) at which that time will occur.
  */
-function resolveNextOccurrence(timeStr: string, tz: string): number | null {
+function resolveNextOccurrence(timeStr: string, tz: string, referenceMs: number): number | null {
   const m = /^(\d{1,2})(?::(\d{2}))?\s*([ap]m)$/i.exec(timeStr.trim());
   if (!m) return null;
 
@@ -61,10 +66,9 @@ function resolveNextOccurrence(timeStr: string, tz: string): number | null {
   }
 
   // Try today and tomorrow in the target timezone
-  const now = Date.now();
   for (let dayOffset = 0; dayOffset <= 1; dayOffset++) {
-    const candidate = epochForTimeInTz(new Date(now + dayOffset * 86_400_000), hour, minute, tz);
-    if (candidate !== null && candidate > now / 1000 - 60) {
+    const candidate = epochForTimeInTz(new Date(referenceMs + dayOffset * 86_400_000), hour, minute, tz);
+    if (candidate !== null && candidate > referenceMs / 1000 - 60) {
       // Allow up to 1 minute in the past to handle clock skew
       return candidate;
     }
