@@ -26,7 +26,7 @@ const DDL = [
   `CREATE TABLE IF NOT EXISTS notifications (
     id                TEXT    PRIMARY KEY,
     device_token_hash TEXT    NOT NULL,
-    limit_kind        TEXT    NOT NULL CHECK (limit_kind IN ('session','weekly')),
+    limit_kind        TEXT    NOT NULL CHECK (limit_kind = 'session'),
     idempotency_key   TEXT    NOT NULL,
     reset_at          INTEGER NOT NULL,
     status            TEXT    NOT NULL CHECK (status IN ('pending','sending','sent','failed')),

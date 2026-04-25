@@ -75,7 +75,7 @@ describe("POST /v1/notify", () => {
   it("returns duplicate on second identical request", async () => {
     await seedUser();
     const resetAt = nowSecs() + 120;
-    const body = { limit_kind: "weekly", reset_at_unix: resetAt, idempotency_key: `weekly:${resetAt}` };
+    const body = { limit_kind: "session", reset_at_unix: resetAt, idempotency_key: `session-dup:${resetAt}` };
 
     const r1 = await notifyPost(body);
     expect(r1.status).toBe(201);

@@ -20,10 +20,8 @@ describe("LimitKindSchema", () => {
 });
 
 describe("messageFor", () => {
-  it("returns the reset message for any kind", () => {
+  it("returns the reset message", () => {
     const s = messageFor("session");
-    const w = messageFor("weekly");
-    expect(s).toBe(w);
     expect(s).toContain("⏰");
     expect(s).toMatch(/reset/i);
   });
@@ -32,11 +30,10 @@ describe("messageFor", () => {
 describe("idempotencyKeyFor", () => {
   it("is deterministic per (kind, reset_at)", () => {
     expect(idempotencyKeyFor("session", 1745600000)).toBe("session:1745600000");
-    expect(idempotencyKeyFor("weekly", 1745600000)).toBe("weekly:1745600000");
   });
 
-  it("distinguishes kinds at the same reset", () => {
-    expect(idempotencyKeyFor("session", 1)).not.toBe(idempotencyKeyFor("weekly", 1));
+  it("distinguishes resets at different times", () => {
+    expect(idempotencyKeyFor("session", 1)).not.toBe(idempotencyKeyFor("session", 2));
   });
 });
 

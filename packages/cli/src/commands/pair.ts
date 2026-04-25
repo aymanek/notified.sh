@@ -58,8 +58,11 @@ export async function runPair(): Promise<void> {
         paired_at: Math.floor(Date.now() / 1000),
       });
 
-      // Absolute path so Claude Code's hook env doesn't need notified on PATH
-      const hookCommand = `${process.execPath} ${process.argv[1]} _hook stop`;
+      // Absolute + double-quoted: survives PATH changes, cwd changes, spaces in paths
+      const { resolve } = await import("path");
+      const nodePath = process.execPath;
+      const scriptPath = resolve(process.argv[1] ?? "");
+      const hookCommand = `"${nodePath}" "${scriptPath}" _hook stop`;
       await installHook(hookCommand);
 
       console.log(`\nPaired with @${status.child_bot_username}`);

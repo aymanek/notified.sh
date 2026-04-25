@@ -140,4 +140,27 @@ describe("installHook / uninstallHook (file-based)", () => {
     const settings = JSON.parse(raw) as { hooks: Record<string, unknown> };
     expect(settings.hooks["StopFailure"]).toBeUndefined();
   });
+
+  it("replaces legacy 'notified _hook stop' on upgrade", async () => {
+    const legacy = {
+      hooks: {
+        StopFailure: [
+          {
+            matcher: "rate_limit",
+            hooks: [{ type: "command", command: "notified _hook stop", timeout: 5 }],
+          },
+        ],
+      },
+    };
+    await writeFile(join(tmpDir, "settings.json"), JSON.stringify(legacy));
+    await installHook(TEST_CMD);
+
+    const raw = await readFile(join(tmpDir, "settings.json"), "utf8");
+    const settings = JSON.parse(raw) as {
+      hooks: { StopFailure: Array<{ hooks: Array<{ command: string }> }> };
+    };
+    const cmds = settings.hooks.StopFailure.flatMap((b) => b.hooks.map((h) => h.command));
+    expect(cmds).toContain(TEST_CMD);
+    expect(cmds).not.toContain("notified _hook stop");
+  });
 });

@@ -31,11 +31,16 @@ export async function installHook(command: string): Promise<void> {
     await copyFile(path, `${path}.bak`);
   }
 
-  if (isInstalled(settings)) return;
+  // Idempotent: bail only if the EXACT command is already installed.
+  if (hasExactCommand(settings, command)) return;
 
   if (typeof settings.hooks !== "object" || settings.hooks === null || Array.isArray(settings.hooks)) {
     settings.hooks = {};
   }
+
+  // Strip any legacy/stale _hook stop entries first — handles upgrades from
+  // the old PATH-dependent `notified _hook stop` form.
+  removeOurEntries(settings);
 
   const eventBlocks = settings.hooks[HOOK_EVENT] ?? [];
   const existing = eventBlocks.find(
@@ -103,4 +108,31 @@ export function isInstalled(settings: Settings): boolean {
       Array.isArray(block.hooks) &&
       block.hooks.some((h) => typeof h.command === "string" && h.command.includes(HOOK_SIGNATURE)),
   );
+}
+
+function hasExactCommand(settings: Settings, command: string): boolean {
+  if (typeof settings.hooks !== "object" || settings.hooks === null || Array.isArray(settings.hooks)) return false;
+  const eventBlocks = settings.hooks[HOOK_EVENT];
+  if (!Array.isArray(eventBlocks)) return false;
+  return eventBlocks.some(
+    (block) =>
+      Array.isArray(block.hooks) && block.hooks.some((h) => h.command === command),
+  );
+}
+
+function removeOurEntries(settings: Settings): void {
+  if (typeof settings.hooks !== "object" || settings.hooks === null || Array.isArray(settings.hooks)) return;
+  const eventBlocks = settings.hooks[HOOK_EVENT];
+  if (!Array.isArray(eventBlocks)) return;
+
+  for (const block of eventBlocks) {
+    if (!Array.isArray(block.hooks)) continue;
+    block.hooks = block.hooks.filter((h) => !h.command.includes(HOOK_SIGNATURE));
+  }
+  settings.hooks[HOOK_EVENT] = eventBlocks.filter(
+    (b) => Array.isArray(b.hooks) && b.hooks.length > 0,
+  );
+  if (settings.hooks[HOOK_EVENT]!.length === 0) {
+    delete settings.hooks[HOOK_EVENT];
+  }
 }
