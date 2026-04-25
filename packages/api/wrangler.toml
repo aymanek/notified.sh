@@ -12,6 +12,16 @@ routes = [
 # Non-secret runtime vars (secrets go via `wrangler secret put`)
 APP_VERSION = "0.1.0"
 
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
 [triggers]
 crons = ["* * * * *"]
 
