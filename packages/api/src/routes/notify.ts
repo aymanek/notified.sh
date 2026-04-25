@@ -21,7 +21,7 @@ notifyRoute.post("/v1/notify", requireAuth, async (c) => {
   if (!parsed.success) {
     return c.json({ error: { code: "bad_request", message: parsed.error.message } }, 400);
   }
-  const { limit_kind, reset_at_unix, idempotency_key } = parsed.data;
+  const { reset_at_unix, idempotency_key } = parsed.data;
 
   // Composite UNIQUE (device_token_hash, idempotency_key) prevents double-scheduling.
   const id = nanoid(16);
@@ -30,10 +30,10 @@ notifyRoute.post("/v1/notify", requireAuth, async (c) => {
   try {
     await c.env.DB.prepare(
       `INSERT INTO notifications
-       (id, device_token_hash, limit_kind, idempotency_key, reset_at, status, created_at)
-       VALUES (?, ?, ?, ?, ?, 'pending', ?)`,
+       (id, device_token_hash, idempotency_key, reset_at, status, created_at)
+       VALUES (?, ?, ?, ?, 'pending', ?)`,
     )
-      .bind(id, hash, limit_kind, idempotency_key, reset_at_unix, now)
+      .bind(id, hash, idempotency_key, reset_at_unix, now)
       .run();
   } catch (err: unknown) {
     // D1 UNIQUE constraint violation → duplicate
@@ -44,7 +44,7 @@ notifyRoute.post("/v1/notify", requireAuth, async (c) => {
     throw err;
   }
 
-  log({ event: "notify_scheduled", user_prefix: hashPrefix(hash), limit_kind });
+  log({ event: "notify_scheduled", user_prefix: hashPrefix(hash) });
   return c.json({ status: "scheduled" }, 201);
 });
 

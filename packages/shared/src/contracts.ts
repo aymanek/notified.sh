@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { LimitKindSchema } from "./domain.js";
 
 // --- pair -------------------------------------------------------------------
 
@@ -30,7 +29,6 @@ export type PairStatusResponse = z.infer<typeof PairStatusResponseSchema>;
 // --- notify -----------------------------------------------------------------
 
 export const NotifyRequestSchema = z.object({
-  limit_kind: LimitKindSchema,
   reset_at_unix: z.number().int().positive(),
   idempotency_key: z.string().min(1).max(200),
 });
@@ -42,11 +40,6 @@ export const NotifyResponseSchema = z.object({
 export type NotifyResponse = z.infer<typeof NotifyResponseSchema>;
 
 // --- test -------------------------------------------------------------------
-
-export const TestRequestSchema = z.object({
-  limit_kind: LimitKindSchema,
-});
-export type TestRequest = z.infer<typeof TestRequestSchema>;
 
 export const TestResponseSchema = z.object({
   status: z.literal("sent"),

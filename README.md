@@ -13,7 +13,7 @@ Milestone 1 complete: monorepo scaffold. `packages/{shared,api,cli}` build and l
 ```bash
 npm install -g notified.sh
 notified pair      # QR → Telegram → done
-notified test --kind session
+notified test
 ```
 
 ## Dev

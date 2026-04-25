@@ -1,7 +1,6 @@
 import type { RateLimitLine } from "./jsonl.js";
 
 export type Detection = {
-  limit_kind: "session";
   reset_at: number; // unix seconds
   confidence: "high" | "medium";
 };
@@ -38,7 +37,6 @@ function parseLine(line: RateLimitLine): Detection | null {
   if (reset_at < nowSec - 6 * 3600) return null;
 
   return {
-    limit_kind: "session",
     reset_at,
     confidence: "high",
   };

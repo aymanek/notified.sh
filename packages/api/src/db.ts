@@ -31,7 +31,6 @@ export type NotificationStatus = "pending" | "sending" | "sent" | "failed";
 export type Notification = {
   id: string;
   device_token_hash: string;
-  limit_kind: "session";
   idempotency_key: string;
   reset_at: number;
   status: NotificationStatus;

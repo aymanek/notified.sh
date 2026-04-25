@@ -26,10 +26,10 @@ async function insertNotification(hash: string, resetAt: number, status = "pendi
   const id = `notif-${Math.random().toString(36).slice(2)}`;
   await env.DB.prepare(
     `INSERT INTO notifications
-     (id, device_token_hash, limit_kind, idempotency_key, reset_at, status, claimed_at, created_at)
-     VALUES (?, ?, 'session', ?, ?, ?, ?, ?)`,
+     (id, device_token_hash, idempotency_key, reset_at, status, claimed_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
   )
-    .bind(id, hash, `session:${resetAt}`, resetAt, status, claimedAt ?? null, nowSecs())
+    .bind(id, hash, `reset:${resetAt}`, resetAt, status, claimedAt ?? null, nowSecs())
     .run();
   return id;
 }

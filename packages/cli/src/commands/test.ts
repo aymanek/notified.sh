@@ -13,7 +13,7 @@ export async function runTest(): Promise<void> {
   await post(
     TestResponseSchema,
     `${apiBase}/v1/test`,
-    { limit_kind: "session" },
+    undefined,
     config.device_token,
   );
 

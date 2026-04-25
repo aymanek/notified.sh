@@ -1,6 +1,5 @@
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { dirname } from "path";
-import type { LimitKind } from "@notified.sh/shared";
 import { STATE_FILE } from "./paths.js";
 
 const MAX_SUBMITTED = 500;
@@ -9,13 +8,11 @@ const SUBMITTED_TTL_DAYS = 14;
 export type SubmittedEntry = {
   idempotency_key: string;
   submitted_at: number;
-  limit_kind: LimitKind;
   reset_at: number;
 };
 
 export type PendingEntry = {
   idempotency_key: string;
-  limit_kind: LimitKind;
   reset_at: number;
   last_error?: string;
 };

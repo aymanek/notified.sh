@@ -58,7 +58,7 @@ async function claimDue(env: Env, now: number): Promise<Notification[]> {
        ORDER BY reset_at ASC
        LIMIT ?
      )
-     RETURNING id, device_token_hash, limit_kind, idempotency_key, reset_at,
+     RETURNING id, device_token_hash, idempotency_key, reset_at,
                status, claimed_at, created_at, sent_at, last_error`,
   )
     .bind(now, now, CLAIM_LIMIT)
@@ -88,7 +88,7 @@ async function dispatchOne(env: Env, n: Notification): Promise<void> {
       new Uint8Array(user.child_bot_token_enc as unknown as ArrayBuffer),
       env.AES_KEY_B64,
     );
-    await sendMessage(token, user.child_chat_id, messageFor(n.limit_kind));
+    await sendMessage(token, user.child_chat_id, messageFor());
 
     await env.DB.batch([
       env.DB.prepare(
@@ -99,7 +99,7 @@ async function dispatchOne(env: Env, n: Notification): Promise<void> {
       ).bind(now, n.device_token_hash),
     ]);
 
-    log({ event: "dispatch_sent", user_prefix: hashPrefix(n.device_token_hash), limit_kind: n.limit_kind });
+    log({ event: "dispatch_sent", user_prefix: hashPrefix(n.device_token_hash) });
   } catch (err) {
     const code = err instanceof TgError ? `tg:${err.code}` : "network";
     const revert = code.startsWith("network");

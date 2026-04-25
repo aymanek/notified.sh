@@ -1,7 +1,7 @@
 import { loadConfig, resolvedApiBase } from "../config.js";
 import { loadState, saveState } from "../state.js";
 import { post } from "../api-client.js";
-import { NotifyResponseSchema } from "@notified.sh/shared";
+import { idempotencyKeyFor, NotifyResponseSchema } from "@notified.sh/shared";
 import {
   transcriptPathFromStdin,
   findMostRecentTranscript,
@@ -28,8 +28,8 @@ export async function runHookStop(): Promise<void> {
   const detection = detectRateLimit(lines);
   if (!detection) return;
 
-  const { limit_kind, reset_at } = detection;
-  const idempotency_key = `${limit_kind}:${reset_at}`;
+  const { reset_at } = detection;
+  const idempotency_key = idempotencyKeyFor(reset_at);
   const apiBase = resolvedApiBase(config);
 
   // 4. Load state + flush pending from previous failed runs first
@@ -53,7 +53,7 @@ export async function runHookStop(): Promise<void> {
     const res = await post(
       NotifyResponseSchema,
       `${apiBase}/v1/notify`,
-      { limit_kind, reset_at_unix: reset_at, idempotency_key },
+      { reset_at_unix: reset_at, idempotency_key },
       config.device_token,
       HOOK_TIMEOUT_MS,
     );
@@ -62,14 +62,12 @@ export async function runHookStop(): Promise<void> {
       state.submitted.push({
         idempotency_key,
         submitted_at: Math.floor(Date.now() / 1000),
-        limit_kind,
         reset_at,
       });
     }
   } catch (err: unknown) {
     state.pending_submit.push({
       idempotency_key,
-      limit_kind,
       reset_at,
       last_error: err instanceof Error ? err.message : String(err),
     });
@@ -95,7 +93,6 @@ async function flushPending(
         NotifyResponseSchema,
         `${apiBase}/v1/notify`,
         {
-          limit_kind: entry.limit_kind,
           reset_at_unix: entry.reset_at,
           idempotency_key: entry.idempotency_key,
         },
@@ -106,7 +103,6 @@ async function flushPending(
         state.submitted.push({
           idempotency_key: entry.idempotency_key,
           submitted_at: nowSec,
-          limit_kind: entry.limit_kind,
           reset_at: entry.reset_at,
         });
       } else {

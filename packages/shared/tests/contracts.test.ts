@@ -4,7 +4,6 @@ import {
   PairStatusResponseSchema,
   NotifyRequestSchema,
   NotifyResponseSchema,
-  TestRequestSchema,
   TestResponseSchema,
   UnpairResponseSchema,
   HealthResponseSchema,
@@ -76,17 +75,12 @@ describe("PairStatusResponseSchema", () => {
 
 describe("NotifyRequestSchema", () => {
   const valid = {
-    limit_kind: "session" as const,
     reset_at_unix: 1_745_600_000,
-    idempotency_key: "session:1745600000",
+    idempotency_key: "reset:1745600000",
   };
 
   it("round-trips a valid request", () => {
     expect(NotifyRequestSchema.parse(valid)).toEqual(valid);
-  });
-
-  it("rejects unknown limit_kind", () => {
-    expect(() => NotifyRequestSchema.parse({ ...valid, limit_kind: "monthly" })).toThrow();
   });
 
   it("rejects negative or zero reset_at_unix", () => {
@@ -117,16 +111,7 @@ describe("NotifyResponseSchema", () => {
   });
 });
 
-describe("TestRequestSchema / TestResponseSchema", () => {
-  it("round-trips a test request", () => {
-    expect(TestRequestSchema.parse({ limit_kind: "session" })).toEqual({ limit_kind: "session" });
-  });
-
-  it("rejects any non-session kind", () => {
-    expect(() => TestRequestSchema.parse({ limit_kind: "weekly" })).toThrow();
-    expect(() => TestRequestSchema.parse({ limit_kind: "daily" })).toThrow();
-  });
-
+describe("TestResponseSchema", () => {
   it("accepts only sent on response", () => {
     expect(TestResponseSchema.parse({ status: "sent" })).toEqual({ status: "sent" });
     expect(() => TestResponseSchema.parse({ status: "scheduled" })).toThrow();

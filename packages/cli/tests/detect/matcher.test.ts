@@ -34,10 +34,6 @@ describe("detectRateLimit", () => {
     expect(result).not.toBeNull();
     expect(result!.confidence).toBe("high");
     expect(result!.reset_at).toBeGreaterThan(Math.floor(Date.now() / 1000));
-    // Session: reset within 12h → "session"
-    // (This fixture uses 3am Africa/Casablanca — could be session or weekly
-    //  depending on current time. Just verify it parsed without throwing.)
-    expect(["session", "weekly"]).toContain(result!.limit_kind);
   });
 
   it("parses hour:minute time (12:00pm)", async () => {
@@ -61,8 +57,8 @@ describe("detectRateLimit", () => {
   });
 });
 
-describe("limit_kind inference", () => {
-  it("classifies as session when reset is within 12h", async () => {
+describe("reset time inference", () => {
+  it("parses a reset within 12h", async () => {
     // Create a line with a reset time ~5h from now
     const nowSec = Math.floor(Date.now() / 1000);
     const resetSec = nowSec + 5 * 3600;
@@ -84,16 +80,16 @@ describe("limit_kind inference", () => {
     }]);
 
     expect(result).not.toBeNull();
-    expect(result!.limit_kind).toBe("session");
+    expect(result!.reset_at).toBeGreaterThan(0);
   });
 
-  it("always returns session kind regardless of reset distance", async () => {
+  it("parses a reset regardless of distance within the next day", async () => {
     const { detectRateLimit: detect } = await import("../../src/detect/matcher.js");
     const result = detect([{
       timestamp: new Date().toISOString(),
       text: `You've hit your limit · resets 11:59pm (UTC)`,
     }]);
     expect(result).not.toBeNull();
-    expect(result!.limit_kind).toBe("session");
+    expect(result!.reset_at).toBeGreaterThan(0);
   });
 });
