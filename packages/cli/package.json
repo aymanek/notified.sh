@@ -1,12 +1,11 @@
 {
   "name": "notified.sh",
   "version": "0.1.0",
-  "private": true,
   "description": "Telegram notifications for Claude Code limit resets.",
   "type": "module",
-  "main": "./dist/cli.js",
+  "main": "./dist/cli.cjs",
   "bin": {
-    "notified": "./dist/cli.js"
+    "notified": "./dist/cli.cjs"
   },
   "files": [
     "dist",
@@ -20,12 +19,12 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@notified.sh/shared": "workspace:*",
     "commander": "^12.1.0",
     "qrcode-terminal": "^0.12.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@notified.sh/shared": "workspace:*",
     "@types/qrcode-terminal": "^0.12.2",
     "tsup": "^8.4.0",
     "vitest": "^2.1.0"

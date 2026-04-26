@@ -4,6 +4,7 @@ import { runPair } from "./commands/pair.js";
 import { runTest } from "./commands/test.js";
 import { runUnpair } from "./commands/unpair.js";
 import { runHookStop } from "./commands/_hookStop.js";
+import { runHookCheckPaired } from "./commands/_hookCheckPaired.js";
 import { redact } from "./redact.js";
 
 const PKG_VERSION = "0.1.0";
@@ -49,17 +50,27 @@ program
   .description("Remove pairing, uninstall hook, delete local config")
   .action(wrapCommand(runUnpair));
 
-// notified _hook stop  (hidden — called by Claude Code StopFailure hook)
+// notified _hook <subcommand>  (hidden — called by Claude Code plugin hooks)
 program
-  .command("_hook stop", { hidden: true })
-  .description("Internal: called by Claude Code StopFailure hook")
-  .action(async () => {
+  .command("_hook <subcommand>", { hidden: true })
+  .description("Internal: called by Claude Code plugin hooks")
+  .action(async (subcommand: string) => {
     try {
-      await runHookStop();
+      switch (subcommand) {
+        case "stop":
+          await runHookStop();
+          break;
+        case "check-paired":
+          await runHookCheckPaired();
+          break;
+        default:
+          // Unknown subcommand — silent exit, never block Claude Code
+          break;
+      }
     } catch {
       // Never surface errors — must not block Claude Code
-      process.exit(0);
     }
+    process.exit(0);
   });
 
 program.parseAsync(process.argv).catch((err: unknown) => {

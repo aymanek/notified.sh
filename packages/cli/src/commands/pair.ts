@@ -16,11 +16,12 @@ export async function runPair(): Promise<void> {
   // 1. Start pairing session
   const session = await post(PairStartResponseSchema, `${apiBase}/v1/pair`);
 
-  // 2. Show QR + deep link
-  console.log("\nScan the QR code or open the link in Telegram:\n");
+  // 2. Show deep link first (clickable in most terminals), QR as fallback
+  console.log("\nOpen this link in Telegram:\n");
+  console.log(`  ${session.deep_link}\n`);
+  console.log("If on a different device, scan:");
   qrcode.generate(session.deep_link, { small: true });
-  console.log(`\n  ${session.deep_link}\n`);
-  console.log("Waiting for you to start the bot in Telegram...");
+  console.log("\nWaiting for you to start the bot in Telegram...");
 
   // 3. Poll for completion
   const deadline = Date.now() + POLL_TIMEOUT_MS;
