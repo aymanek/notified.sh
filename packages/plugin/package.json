@@ -1,0 +1,12 @@
+{
+  "name": "@notified.sh/plugin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Claude Code plugin for notified.sh — bundles the CLI for marketplace distribution.",
+  "type": "module",
+  "scripts": {
+    "sync": "node scripts/sync-cli.mjs",
+    "test": "echo \"no tests\" && exit 0",
+    "build": "echo \"plugin has no build — run sync after building cli\" && exit 0"
+  }
+}

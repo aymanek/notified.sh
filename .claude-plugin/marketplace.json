@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "notified",
+  "description": "Telegram notifications for Claude Code rate-limit resets. Server-side scheduled delivery.",
+  "owner": {
+    "name": "Aymane Kamal",
+    "email": "aymanekamal47@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "notified",
+      "description": "Telegram notifications for Claude Code rate-limit resets. Server-side scheduled delivery — fires at the reset moment even if your CLI or laptop is off.",
+      "source": "./packages/plugin",
+      "category": "productivity",
+      "tags": ["notifications", "telegram", "rate-limit"],
+      "homepage": "https://notified.sh"
+    }
+  ]
+}

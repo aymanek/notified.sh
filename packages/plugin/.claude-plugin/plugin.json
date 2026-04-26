@@ -1,0 +1,49 @@
+{
+  "name": "notified",
+  "description": "Telegram notifications for Claude Code rate-limit resets. Server-side scheduled delivery — fires at the reset moment even if your CLI or laptop is off.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Aymane Kamal",
+    "url": "https://github.com/aymanek"
+  },
+  "homepage": "https://notified.sh",
+  "repository": "https://github.com/aymanek/notified.sh",
+  "license": "MIT",
+  "keywords": ["notifications", "telegram", "rate-limit", "productivity"],
+  "hooks": {
+    "StopFailure": [
+      {
+        "matcher": "rate_limit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/cli.cjs\" _hook stop",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/cli.cjs\" _hook check-paired",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/dist/cli.cjs\" _hook check-paired",
+            "timeout": 3
+          }
+        ]
+      }
+    ]
+  }
+}
