@@ -33,3 +33,11 @@ jobs:
       - run: pnpm test
 
       - run: pnpm build
+
+      - name: Verify plugin bundle is in sync with CLI source
+        run: |
+          pnpm sync-plugin
+          git diff --exit-code -- packages/plugin/dist || {
+            echo "::error::packages/plugin/dist/cli.cjs is stale. Run 'pnpm release' locally and commit the result."
+            exit 1
+          }
