@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { runStatus } from "./commands/status.js";
-import { runPair } from "./commands/pair.js";
+import { runPair, runPairJson, runPairWait } from "./commands/pair.js";
 import { runTest } from "./commands/test.js";
 import { runUnpair } from "./commands/unpair.js";
 import { runHookStop } from "./commands/_hookStop.js";
@@ -25,11 +25,26 @@ program
   .description("Show paired state, hook install status, and API reachability")
   .action(wrapCommand(runStatus));
 
-// notified pair
+// notified pair [--json | --wait <session_id>]
 program
   .command("pair")
   .description("Pair with Telegram to receive limit-reset notifications")
-  .action(wrapCommand(runPair));
+  .option("--json", "Start a session and print {session_id, deep_link, qr_ascii} as JSON, then exit (no polling)")
+  .option("--wait <session_id>", "Poll an existing session until complete; no display")
+  .action(async (opts: { json?: boolean; wait?: string }) => {
+    void checkForUpdate();
+    try {
+      if (opts.wait) {
+        await runPairWait(opts.wait);
+      } else if (opts.json) {
+        await runPairJson();
+      } else {
+        await runPair();
+      }
+    } catch (err: unknown) {
+      handleFatalError(err);
+    }
+  });
 
 // notified test
 program

@@ -2,6 +2,7 @@ import qrcode from "qrcode-terminal";
 import {
   PairStartResponseSchema,
   PairStatusResponseSchema,
+  type PairStartResponse,
 } from "@notified.sh/shared";
 import { get, post } from "../api-client.js";
 import { saveConfig, resolvedApiBase } from "../config.js";
@@ -10,20 +11,75 @@ import { installHook } from "../hook/install.js";
 const POLL_INTERVAL_MS = 2_000;
 const POLL_TIMEOUT_MS = 10 * 60 * 1_000; // 10 min
 
+/**
+ * Default interactive flow: start session, print link + QR, poll, save config.
+ */
 export async function runPair(): Promise<void> {
   const apiBase = resolvedApiBase(null);
+  const session = await startSession(apiBase);
 
-  // 1. Start pairing session
-  const session = await post(PairStartResponseSchema, `${apiBase}/v1/pair`);
-
-  // 2. Show deep link first (clickable in most terminals), QR as fallback
   console.log("\nOpen this link in Telegram:\n");
   console.log(`  ${session.deep_link}\n`);
   console.log("If on a different device, scan:");
   qrcode.generate(session.deep_link, { small: true });
   console.log("\nWaiting for you to start the bot in Telegram...");
 
-  // 3. Poll for completion
+  await pollAndPersist(apiBase, session.session_id);
+}
+
+/**
+ * Machine-readable mode for the plugin nudge flow.
+ *
+ * Starts a pairing session and prints a single JSON line with everything
+ * Claude needs to render the pairing UI in its own response (deep link +
+ * pre-rendered QR ASCII), then exits without polling. The caller is
+ * expected to follow up with `pair --wait <session_id>` to drive the
+ * polling loop separately.
+ *
+ * Splitting display from polling keeps the QR/link in Claude's main answer
+ * (full width, readable) instead of a collapsed Bash tool-output box.
+ */
+export async function runPairJson(): Promise<void> {
+  const apiBase = resolvedApiBase(null);
+  const session = await startSession(apiBase);
+  const qrAscii = await renderQr(session.deep_link);
+
+  process.stdout.write(
+    JSON.stringify({
+      session_id: session.session_id,
+      deep_link: session.deep_link,
+      qr_ascii: qrAscii,
+    }) + "\n",
+  );
+}
+
+/**
+ * Polling-only mode for the plugin nudge flow.
+ *
+ * Resumes an existing pairing session created by `pair --json`, polls until
+ * the user completes /start in Telegram, and persists config + installs the
+ * Stop hook. No display output other than completion status.
+ */
+export async function runPairWait(sessionId: string): Promise<void> {
+  if (!sessionId) {
+    console.error("pair --wait requires a session id");
+    process.exit(1);
+  }
+  const apiBase = resolvedApiBase(null);
+  await pollAndPersist(apiBase, sessionId);
+}
+
+async function startSession(apiBase: string): Promise<PairStartResponse> {
+  return post(PairStartResponseSchema, `${apiBase}/v1/pair`);
+}
+
+function renderQr(text: string): Promise<string> {
+  return new Promise((resolve) => {
+    qrcode.generate(text, { small: true }, (out) => resolve(out));
+  });
+}
+
+async function pollAndPersist(apiBase: string, sessionId: string): Promise<void> {
   const deadline = Date.now() + POLL_TIMEOUT_MS;
   let lastStatus = "pending";
 
@@ -32,7 +88,7 @@ export async function runPair(): Promise<void> {
 
     const status = await get(
       PairStatusResponseSchema,
-      `${apiBase}/v1/pair/${session.session_id}`,
+      `${apiBase}/v1/pair/${sessionId}`,
     );
 
     if (status.status === "expired") {
@@ -47,7 +103,6 @@ export async function runPair(): Promise<void> {
 
     if (status.status === "complete") {
       if (!status.device_token) {
-        // Token already consumed by a previous poll (shouldn't happen in practice)
         console.error("\nPairing complete but device token was already consumed. Run `notified pair` again.");
         process.exit(1);
       }
@@ -59,7 +114,6 @@ export async function runPair(): Promise<void> {
         paired_at: Math.floor(Date.now() / 1000),
       });
 
-      // Absolute + double-quoted: survives PATH changes, cwd changes, spaces in paths
       const { resolve } = await import("path");
       const nodePath = process.execPath;
       const scriptPath = resolve(process.argv[1] ?? "");
