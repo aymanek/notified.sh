@@ -7,6 +7,7 @@ import {
 import { get, post } from "../api-client.js";
 import { saveConfig, resolvedApiBase } from "../config.js";
 import { installHook } from "../hook/install.js";
+import { renderQrSmall } from "../qr.js";
 
 const POLL_INTERVAL_MS = 2_000;
 const POLL_TIMEOUT_MS = 10 * 60 * 1_000; // 10 min
@@ -28,37 +29,44 @@ export async function runPair(): Promise<void> {
 }
 
 /**
- * Machine-readable mode for the plugin nudge flow.
+ * Plugin-flow display step.
  *
- * Starts a pairing session and prints a single JSON line with everything
- * Claude needs to render the pairing UI in its own response (deep link +
- * pre-rendered QR ASCII), then exits without polling. The caller is
- * expected to follow up with `pair --wait <session_id>` to drive the
- * polling loop separately.
+ * Starts a pairing session, then prints a fully-formatted markdown reply to
+ * stdout that Claude can paste verbatim into its response. The session id
+ * is written to stderr so the caller can capture it for the follow-up
+ * `pair --wait <id>` call.
  *
- * Splitting display from polling keeps the QR/link in Claude's main answer
- * (full width, readable) instead of a collapsed Bash tool-output box.
+ * Why split display from polling: Claude Code desktop collapses the Bash
+ * tool-output box to its last line, so a QR rendered there is unreadable.
+ * Putting the QR in Claude's reply (markdown fenced block, full width)
+ * makes it scannable.
  */
-export async function runPairJson(): Promise<void> {
+export async function runPairMessage(): Promise<void> {
   const apiBase = resolvedApiBase(null);
   const session = await startSession(apiBase);
-  const qrAscii = await renderQr(session.deep_link);
+  const qr = renderQrSmall(session.deep_link);
 
-  process.stdout.write(
-    JSON.stringify({
-      session_id: session.session_id,
-      deep_link: session.deep_link,
-      qr_ascii: qrAscii,
-    }) + "\n",
-  );
+  const message =
+    `**Pair notified.sh with Telegram** so you get a ping when Claude Code hits a rate limit.\n\n` +
+    `[Open in Telegram](${session.deep_link})\n\n` +
+    `_or scan from a different device_:\n\n` +
+    "```\n" +
+    qr +
+    "\n```\n\n" +
+    `Send \`/start\` to the bot Telegram opens. Pairing finishes automatically.`;
+
+  process.stdout.write(message + "\n");
+  // session id goes to stderr so callers can capture it independently of the
+  // markdown body on stdout.
+  process.stderr.write(session.session_id + "\n");
 }
 
 /**
  * Polling-only mode for the plugin nudge flow.
  *
- * Resumes an existing pairing session created by `pair --json`, polls until
- * the user completes /start in Telegram, and persists config + installs the
- * Stop hook. No display output other than completion status.
+ * Resumes an existing pairing session created by `pair --message`, polls
+ * until the user completes /start in Telegram, and persists config + installs
+ * the Stop hook. No display output other than completion status.
  */
 export async function runPairWait(sessionId: string): Promise<void> {
   if (!sessionId) {
@@ -71,12 +79,6 @@ export async function runPairWait(sessionId: string): Promise<void> {
 
 async function startSession(apiBase: string): Promise<PairStartResponse> {
   return post(PairStartResponseSchema, `${apiBase}/v1/pair`);
-}
-
-function renderQr(text: string): Promise<string> {
-  return new Promise((resolve) => {
-    qrcode.generate(text, { small: true }, (out) => resolve(out));
-  });
 }
 
 async function pollAndPersist(apiBase: string, sessionId: string): Promise<void> {
