@@ -57,7 +57,7 @@ export async function runPairMessage(): Promise<void> {
   }
 
   const message =
-    `**Pair notified.sh with Telegram** so you get a ping when Claude Code hits a rate limit.\n\n` +
+    `**Pair with Telegram to get a ping the moment your Claude rate limit resets** — so you know exactly when you can resume.\n\n` +
     `[Open in Telegram](${session.deep_link})\n\n` +
     qrSection +
     `Send \`/start\` to the bot Telegram opens. Pairing finishes automatically.`;

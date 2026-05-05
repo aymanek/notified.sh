@@ -8511,7 +8511,7 @@ async function runPairMessage() {
 
 `;
   }
-  const message = `**Pair notified.sh with Telegram** so you get a ping when Claude Code hits a rate limit.
+  const message = `**Pair with Telegram to get a ping the moment your Claude rate limit resets** \u2014 so you know exactly when you can resume.
 
 [Open in Telegram](${session.deep_link})
 
@@ -8956,7 +8956,7 @@ function redact(text) {
 }
 
 // src/cli.ts
-var PKG_VERSION = "0.1.6";
+var PKG_VERSION = "0.1.7";
 var program2 = new Command("notified").version(PKG_VERSION, "-v, --version").option("--debug", "Show debug output and stack traces").hook("preAction", (thisCommand) => {
   const opts = thisCommand.opts();
   if (opts.debug || process.env["NOTIFIED_DEBUG"]) {
