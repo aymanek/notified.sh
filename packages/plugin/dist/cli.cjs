@@ -3417,7 +3417,7 @@ var require_QRErrorCorrectLevel = __commonJS({
 var require_QRRSBlock = __commonJS({
   "../../node_modules/.pnpm/qrcode-terminal@0.12.0/node_modules/qrcode-terminal/vendor/QRCode/QRRSBlock.js"(exports2, module2) {
     "use strict";
-    var QRErrorCorrectLevel2 = require_QRErrorCorrectLevel();
+    var QRErrorCorrectLevel = require_QRErrorCorrectLevel();
     function QRRSBlock(totalCount, dataCount) {
       this.totalCount = totalCount;
       this.dataCount = dataCount;
@@ -3647,13 +3647,13 @@ var require_QRRSBlock = __commonJS({
     };
     QRRSBlock.getRsBlockTable = function(typeNumber, errorCorrectLevel) {
       switch (errorCorrectLevel) {
-        case QRErrorCorrectLevel2.L:
+        case QRErrorCorrectLevel.L:
           return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
-        case QRErrorCorrectLevel2.M:
+        case QRErrorCorrectLevel.M:
           return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
-        case QRErrorCorrectLevel2.Q:
+        case QRErrorCorrectLevel.Q:
           return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
-        case QRErrorCorrectLevel2.H:
+        case QRErrorCorrectLevel.H:
           return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
         default:
           return void 0;
@@ -3708,7 +3708,7 @@ var require_QRCode = __commonJS({
     var QRPolynomial = require_QRPolynomial();
     var QRRSBlock = require_QRRSBlock();
     var QRBitBuffer = require_QRBitBuffer();
-    function QRCode2(typeNumber, errorCorrectLevel) {
+    function QRCode(typeNumber, errorCorrectLevel) {
       this.typeNumber = typeNumber;
       this.errorCorrectLevel = errorCorrectLevel;
       this.modules = null;
@@ -3716,7 +3716,7 @@ var require_QRCode = __commonJS({
       this.dataCache = null;
       this.dataList = [];
     }
-    QRCode2.prototype = {
+    QRCode.prototype = {
       addData: function(data) {
         var newData = new QR8bitByte(data);
         this.dataList.push(newData);
@@ -3773,7 +3773,7 @@ var require_QRCode = __commonJS({
           this.setupTypeNumber(test);
         }
         if (this.dataCache === null) {
-          this.dataCache = QRCode2.createData(this.typeNumber, this.errorCorrectLevel, this.dataList);
+          this.dataCache = QRCode.createData(this.typeNumber, this.errorCorrectLevel, this.dataList);
         }
         this.mapData(this.dataCache, maskPattern);
       },
@@ -3933,9 +3933,9 @@ var require_QRCode = __commonJS({
         }
       }
     };
-    QRCode2.PAD0 = 236;
-    QRCode2.PAD1 = 17;
-    QRCode2.createData = function(typeNumber, errorCorrectLevel, dataList) {
+    QRCode.PAD0 = 236;
+    QRCode.PAD1 = 17;
+    QRCode.createData = function(typeNumber, errorCorrectLevel, dataList) {
       var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
       var buffer = new QRBitBuffer();
       for (var i = 0; i < dataList.length; i++) {
@@ -3961,15 +3961,15 @@ var require_QRCode = __commonJS({
         if (buffer.getLengthInBits() >= totalDataCount * 8) {
           break;
         }
-        buffer.put(QRCode2.PAD0, 8);
+        buffer.put(QRCode.PAD0, 8);
         if (buffer.getLengthInBits() >= totalDataCount * 8) {
           break;
         }
-        buffer.put(QRCode2.PAD1, 8);
+        buffer.put(QRCode.PAD1, 8);
       }
-      return QRCode2.createBytes(buffer, rsBlocks);
+      return QRCode.createBytes(buffer, rsBlocks);
     };
-    QRCode2.createBytes = function(buffer, rsBlocks) {
+    QRCode.createBytes = function(buffer, rsBlocks) {
       var offset = 0;
       var maxDcCount = 0;
       var maxEcCount = 0;
@@ -4016,7 +4016,7 @@ var require_QRCode = __commonJS({
       }
       return data;
     };
-    module2.exports = QRCode2;
+    module2.exports = QRCode;
   }
 });
 
@@ -4024,8 +4024,8 @@ var require_QRCode = __commonJS({
 var require_main = __commonJS({
   "../../node_modules/.pnpm/qrcode-terminal@0.12.0/node_modules/qrcode-terminal/lib/main.js"(exports2, module2) {
     "use strict";
-    var QRCode2 = require_QRCode();
-    var QRErrorCorrectLevel2 = require_QRErrorCorrectLevel();
+    var QRCode = require_QRCode();
+    var QRErrorCorrectLevel = require_QRErrorCorrectLevel();
     var black = "\x1B[40m  \x1B[0m";
     var white = "\x1B[47m  \x1B[0m";
     var toCell = function(isBlack) {
@@ -4046,13 +4046,13 @@ var require_main = __commonJS({
       return arr;
     };
     module2.exports = {
-      error: QRErrorCorrectLevel2.L,
+      error: QRErrorCorrectLevel.L,
       generate: function(input, opts, cb) {
         if (typeof opts === "function") {
           cb = opts;
           opts = {};
         }
-        var qrcode2 = new QRCode2(-1, this.error);
+        var qrcode2 = new QRCode(-1, this.error);
         qrcode2.addData(input);
         qrcode2.make();
         var output = "";
@@ -4105,7 +4105,7 @@ var require_main = __commonJS({
         else console.log(output);
       },
       setErrorLevel: function(error) {
-        this.error = QRErrorCorrectLevel2[error] || this.error;
+        this.error = QRErrorCorrectLevel[error] || this.error;
       }
     };
   }
@@ -8480,56 +8480,6 @@ function removeOurEntries(settings) {
   }
 }
 
-// src/qr.ts
-var import_QRCode = __toESM(require_QRCode(), 1);
-var import_QRErrorCorrectLevel = __toESM(require_QRErrorCorrectLevel(), 1);
-var QUARTER_BLOCK = [
-  " ",
-  "\u2597",
-  "\u2596",
-  "\u2584",
-  "\u259D",
-  "\u2590",
-  "\u259E",
-  "\u259F",
-  "\u2598",
-  "\u259A",
-  "\u258C",
-  "\u2599",
-  "\u2580",
-  "\u259C",
-  "\u259B",
-  "\u2588"
-];
-var QUIET_ZONE_MODULES = 2;
-function renderQrSmall(text) {
-  const qr = new import_QRCode.default(-1, import_QRErrorCorrectLevel.default.L);
-  qr.addData(text);
-  qr.make();
-  const n = qr.getModuleCount();
-  const total = n + QUIET_ZONE_MODULES * 2;
-  const padded = total + total % 2;
-  const isDark = (row, col) => {
-    const r = row - QUIET_ZONE_MODULES;
-    const c = col - QUIET_ZONE_MODULES;
-    if (r < 0 || r >= n || c < 0 || c >= n) return false;
-    return qr.modules[r]?.[c] === true;
-  };
-  const lines = [];
-  for (let r = 0; r < padded; r += 2) {
-    let line = "";
-    for (let c = 0; c < padded; c += 2) {
-      const tl = isDark(r, c) ? 8 : 0;
-      const tr = isDark(r, c + 1) ? 4 : 0;
-      const bl = isDark(r + 1, c) ? 2 : 0;
-      const br = isDark(r + 1, c + 1) ? 1 : 0;
-      line += QUARTER_BLOCK[tl | tr | bl | br];
-    }
-    lines.push(line);
-  }
-  return lines.join("\n");
-}
-
 // src/commands/pair.ts
 var POLL_INTERVAL_MS = 2e3;
 var POLL_TIMEOUT_MS = 10 * 60 * 1e3;
@@ -8547,7 +8497,7 @@ async function runPair() {
 async function runPairMessage() {
   const apiBase = resolvedApiBase(null);
   const session = await startSession(apiBase);
-  const qr = renderQrSmall(session.deep_link);
+  const qr = await captureQr(session.deep_link);
   const message = `**Pair notified.sh with Telegram** so you get a ping when Claude Code hits a rate limit.
 
 [Open in Telegram](${session.deep_link})
@@ -8615,6 +8565,11 @@ Paired with @${status.child_bot_username}`);
   }
   console.error("\nTimed out waiting for pairing. Run `notified pair` again.");
   process.exit(1);
+}
+function captureQr(text) {
+  return new Promise((resolve) => {
+    import_qrcode_terminal.default.generate(text, { small: true }, resolve);
+  });
 }
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
