@@ -4,7 +4,6 @@ import {
   PairStatusResponseSchema,
   type PairStartResponse,
 } from "@notified.sh/shared";
-import { renderQrFullBlock } from "../qr.js";
 import { get, post } from "../api-client.js";
 import { saveConfig, resolvedApiBase } from "../config.js";
 import { installHook } from "../hook/install.js";
@@ -43,15 +42,24 @@ export async function runPair(): Promise<void> {
 export async function runPairMessage(): Promise<void> {
   const apiBase = resolvedApiBase(null);
   const session = await startSession(apiBase);
-  const qr = renderQrFullBlock(session.deep_link);
+
+  // QR codes only render correctly in terminal-based Claude Code (CLAUDE_CODE_ENTRYPOINT=cli).
+  // Other entrypoints (desktop app, web) use HTML/CSS code blocks that add line-height
+  // padding, leaving vertical gaps between block characters that make the QR unscannable.
+  // The deep link is clickable everywhere, so it's the reliable primary path.
+  const isCli = process.env["CLAUDE_CODE_ENTRYPOINT"] === "cli";
+  let qrSection: string;
+  if (isCli) {
+    const qr = await captureQr(session.deep_link);
+    qrSection = `_or scan from a different device_:\n\n` + "```\n" + qr + "\n```\n\n";
+  } else {
+    qrSection = `To scan from another device, run \`notified pair\` in your terminal.\n\n`;
+  }
 
   const message =
     `**Pair notified.sh with Telegram** so you get a ping when Claude Code hits a rate limit.\n\n` +
     `[Open in Telegram](${session.deep_link})\n\n` +
-    `_or scan from a different device_:\n\n` +
-    "```\n" +
-    qr +
-    "\n```\n\n" +
+    qrSection +
     `Send \`/start\` to the bot Telegram opens. Pairing finishes automatically.`;
 
   process.stdout.write(message + "\n");
@@ -129,6 +137,12 @@ async function pollAndPersist(apiBase: string, sessionId: string): Promise<void>
 
   console.error("\nTimed out waiting for pairing. Run `notified pair` again.");
   process.exit(1);
+}
+
+function captureQr(text: string): Promise<string> {
+  return new Promise((resolve) => {
+    qrcode.generate(text, { small: true }, resolve);
+  });
 }
 
 function sleep(ms: number): Promise<void> {
