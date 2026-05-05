@@ -4,6 +4,7 @@ import {
   PairStatusResponseSchema,
   type PairStartResponse,
 } from "@notified.sh/shared";
+import { renderQrFullBlock } from "../qr.js";
 import { get, post } from "../api-client.js";
 import { saveConfig, resolvedApiBase } from "../config.js";
 import { installHook } from "../hook/install.js";
@@ -42,7 +43,7 @@ export async function runPair(): Promise<void> {
 export async function runPairMessage(): Promise<void> {
   const apiBase = resolvedApiBase(null);
   const session = await startSession(apiBase);
-  const qr = await captureQr(session.deep_link);
+  const qr = renderQrFullBlock(session.deep_link);
 
   const message =
     `**Pair notified.sh with Telegram** so you get a ping when Claude Code hits a rate limit.\n\n` +
@@ -128,12 +129,6 @@ async function pollAndPersist(apiBase: string, sessionId: string): Promise<void>
 
   console.error("\nTimed out waiting for pairing. Run `notified pair` again.");
   process.exit(1);
-}
-
-function captureQr(text: string): Promise<string> {
-  return new Promise((resolve) => {
-    qrcode.generate(text, { small: true }, resolve);
-  });
 }
 
 function sleep(ms: number): Promise<void> {
