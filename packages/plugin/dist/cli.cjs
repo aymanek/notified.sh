@@ -8949,7 +8949,7 @@ function redact(text) {
 }
 
 // src/cli.ts
-var PKG_VERSION = "0.1.0";
+var PKG_VERSION = "0.1.4";
 var program2 = new Command("notified").version(PKG_VERSION, "-v, --version").option("--debug", "Show debug output and stack traces").hook("preAction", (thisCommand) => {
   const opts = thisCommand.opts();
   if (opts.debug || process.env["NOTIFIED_DEBUG"]) {
