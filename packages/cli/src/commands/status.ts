@@ -4,10 +4,13 @@ import { loadConfig, resolvedApiBase } from "../config.js";
 import { HealthResponseSchema, type HealthResponse } from "@notified.sh/shared";
 import { get } from "../api-client.js";
 import { claudeDataDir } from "../paths.js";
+import { PKG_VERSION } from "../version.js";
 
 export async function runStatus(): Promise<void> {
   const config = await loadConfig();
   const apiBase = resolvedApiBase(config);
+
+  console.log(`Plugin v:  ${PKG_VERSION}`);
 
   if (!config) {
     console.log("Status:    not paired");

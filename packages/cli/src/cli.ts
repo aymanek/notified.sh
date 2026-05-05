@@ -6,8 +6,7 @@ import { runUnpair } from "./commands/unpair.js";
 import { runHookStop } from "./commands/_hookStop.js";
 import { runHookCheckPaired } from "./commands/_hookCheckPaired.js";
 import { redact } from "./redact.js";
-
-const PKG_VERSION = "0.1.7";
+import { PKG_VERSION } from "./version.js";
 
 const program = new Command("notified")
   .version(PKG_VERSION, "-v, --version")
