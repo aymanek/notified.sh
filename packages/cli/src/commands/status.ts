@@ -7,27 +7,26 @@ import { claudeDataDir } from "../paths.js";
 
 export async function runStatus(): Promise<void> {
   const config = await loadConfig();
+  const apiBase = resolvedApiBase(config);
 
   if (!config) {
-    console.log("Status: not paired");
-    console.log("Run `notified pair` to get started.");
-    return;
+    console.log("Status:    not paired");
+    console.log("           Run `notified pair` to get started.");
+  } else {
+    const pairedAt = new Date(config.paired_at * 1000).toLocaleString();
+    console.log(`Status:    paired`);
+    console.log(`Bot:       @${config.child_bot_username}`);
+    console.log(`Paired:    ${pairedAt}`);
   }
 
-  const pairedAt = new Date(config.paired_at * 1000).toLocaleString();
-  console.log(`Status:   paired`);
-  console.log(`Bot:      @${config.child_bot_username}`);
-  console.log(`Paired:   ${pairedAt}`);
-  console.log(`API:      ${resolvedApiBase(config)}`);
+  console.log(`API:       ${apiBase}`);
 
-  // Hook install state
   const hookInstalled = await checkHookInstalled();
-  console.log(`Hook:     ${hookInstalled ? "installed" : "not installed"}`);
+  console.log(`Hook:      ${hookInstalled ? "installed" : "not installed"}`);
 
-  // API reachability
   try {
-    const health = await get<HealthResponse>(HealthResponseSchema, `${resolvedApiBase(config)}/health`, undefined, 3_000);
-    console.log(`API v:    ${health.version} (${health.git_sha})`);
+    const health = await get<HealthResponse>(HealthResponseSchema, `${apiBase}/health`, undefined, 3_000);
+    console.log(`API v:     ${health.version} (${health.git_sha})`);
     console.log(`Reachable: yes`);
   } catch {
     console.log(`Reachable: no`);
