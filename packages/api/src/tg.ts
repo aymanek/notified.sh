@@ -40,7 +40,7 @@ export async function getMe(token: string): Promise<TgBot> {
 }
 
 export async function setWebhook(token: string, url: string, secretToken: string): Promise<void> {
-  await call<boolean>(token, "setWebhook", { url, secret_token: secretToken, drop_pending_updates: true });
+  await call<boolean>(token, "setWebhook", { url, secret_token: secretToken, drop_pending_updates: false });
 }
 
 export async function deleteWebhook(token: string): Promise<void> {

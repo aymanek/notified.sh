@@ -8343,7 +8343,7 @@ function post(schema, url, body, token, timeoutMs) {
 }
 
 // src/version.ts
-var PKG_VERSION = "0.1.8";
+var PKG_VERSION = "0.1.9";
 
 // src/commands/status.ts
 async function runStatus() {
