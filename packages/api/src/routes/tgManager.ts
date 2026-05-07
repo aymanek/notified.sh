@@ -49,12 +49,8 @@ tgManagerRoute.post("/v1/tg/manager", async (c) => {
     const childToken = await getManagedBotToken(c.env.MANAGER_BOT_TOKEN, bot.id);
     const enc = await encryptToken(childToken, c.env.AES_KEY_B64);
 
-    // Register the child bot's webhook with a per-bot derived secret.
-    const secret = await childWebhookSecret(c.env.TG_WEBHOOK_SECRET, bot.id);
-    const webhookUrl = `${DEFAULT_API_BASE}/v1/tg/child/${bot.id}`;
-    await setWebhook(childToken, webhookUrl, secret);
-
-    // Advance session to awaiting_start.
+    // Advance session to awaiting_start before exposing the webhook so /start
+    // can never arrive while the row is still 'pending'.
     await c.env.DB.prepare(
       `UPDATE pairing_sessions
        SET status = 'awaiting_start', child_bot_id = ?, child_bot_username = ?, child_bot_token_enc = ?
@@ -62,6 +58,11 @@ tgManagerRoute.post("/v1/tg/manager", async (c) => {
     )
       .bind(bot.id, bot.username, enc, session.session_id)
       .run();
+
+    // Register the child bot's webhook with a per-bot derived secret.
+    const secret = await childWebhookSecret(c.env.TG_WEBHOOK_SECRET, bot.id);
+    const webhookUrl = `${DEFAULT_API_BASE}/v1/tg/child/${bot.id}`;
+    await setWebhook(childToken, webhookUrl, secret);
 
     log({ event: "child_bot_registered", session_id: session.session_id, bot_id: bot.id });
     return c.json({ ok: true });
