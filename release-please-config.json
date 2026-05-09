@@ -8,19 +8,14 @@
   "packages": {
     "packages/cli": {
       "package-name": "notified.sh",
-      "changelog-path": "CHANGELOG.md",
+      "changelog-path": "../../CHANGELOG.md",
       "extra-files": [
         {
           "type": "generic",
           "path": "src/version.ts"
-        },
-        {
-          "type": "json",
-          "path": "../plugin/.claude-plugin/plugin.json",
-          "jsonpath": "$.version"
         }
       ]
     }
-  },
-  "plugins": ["node-workspace"]
+  }
 }
+
