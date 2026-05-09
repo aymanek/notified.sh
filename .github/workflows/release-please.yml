@@ -48,6 +48,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - run: pnpm -C packages/shared build
+
       - name: Mirror CLI version into plugin.json
         run: |
           version=$(node -p "require('./packages/cli/package.json').version")
