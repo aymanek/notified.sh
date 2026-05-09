@@ -1,5 +1,10 @@
 import { defineConfig } from "tsup";
 import { readFile } from "fs/promises";
+import { readFileSync } from "fs";
+
+const { version: pkgVersion } = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf8"),
+) as { version: string };
 
 export default defineConfig({
   entry: ["src/cli.ts"],
@@ -7,6 +12,12 @@ export default defineConfig({
   outDir: "dist",
   outExtension: () => ({ js: ".cjs" }),
   clean: true,
+  // Inject the package.json version at build time so PKG_VERSION can never
+  // drift from the published version. release-please's node strategy keeps
+  // package.json authoritative.
+  define: {
+    "process.env.NOTIFIED_PKG_VERSION": JSON.stringify(pkgVersion),
+  },
   // Fully bundled — workspace + all npm deps inlined.
   // Required so the same dist/cli.js works both for the npm package and for the
   // Claude Code plugin (which copies dist/cli.js without node_modules).
