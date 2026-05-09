@@ -8,7 +8,6 @@
   "packages": {
     "packages/cli": {
       "package-name": "notified.sh",
-      "changelog-path": "../../CHANGELOG.md",
       "extra-files": [
         {
           "type": "generic",
