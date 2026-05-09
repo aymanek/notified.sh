@@ -11,6 +11,11 @@ import { detectRateLimit } from "../detect/matcher.js";
 
 const HOOK_TIMEOUT_MS = 3_000;
 
+// Race: the StopFailure hook can fire before Claude Code has flushed the
+// rate-limit assistant message to the JSONL transcript. Retry briefly so the
+// first hit isn't dropped.
+const READ_RETRY_DELAYS_MS = [250, 500, 750];
+
 export async function runHookStop(): Promise<void> {
   const config = await loadConfig();
   if (!config) return;
@@ -20,8 +25,12 @@ export async function runHookStop(): Promise<void> {
     (await transcriptPathFromStdin()) ?? (await findMostRecentTranscript());
   if (!transcriptPath) return;
 
-  // 2. Read rate-limit lines
-  const lines = await readRateLimitLines(transcriptPath);
+  // 2. Read rate-limit lines (with retry for the flush race)
+  let lines = await readRateLimitLines(transcriptPath);
+  for (let i = 0; lines.length === 0 && i < READ_RETRY_DELAYS_MS.length; i++) {
+    await sleep(READ_RETRY_DELAYS_MS[i]!);
+    lines = await readRateLimitLines(transcriptPath);
+  }
   if (lines.length === 0) return;
 
   // 3. Detect
@@ -114,4 +123,8 @@ async function flushPending(
   }
 
   state.pending_submit = stillPending;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
