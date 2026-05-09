@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.12](https://github.com/aymanek/notified.sh/compare/v0.1.11...v0.1.12) (2026-05-09)
+
+
+### Bug Fixes
+
+* **ci:** Inject package version at build time instead of manual sync ([8efdd7b](https://github.com/aymanek/notified.sh/commit/8efdd7b003e512f784010b6cac2bd4b1dc841b62))
+* **release:** inline x-release-please-version annotation so PKG_VERSION bumps ([7f249b5](https://github.com/aymanek/notified.sh/commit/7f249b571c2570e7103cb3310c3cdaa12eb829bc))
+
 ## [0.1.11](https://github.com/aymanek/notified.sh/compare/v0.1.10...v0.1.11) (2026-05-09)
 
 
