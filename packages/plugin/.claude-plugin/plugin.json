@@ -1,7 +1,7 @@
 {
   "name": "notified",
   "description": "Telegram notifications for Claude Code rate-limit resets. Server-side scheduled delivery — fires at the reset moment even if your CLI or laptop is off.",
-  "version": "0.1.9",
+  "version": "0.1.11",
   "author": {
     "name": "Aymane Kamal",
     "url": "https://github.com/aymanek"
@@ -9,7 +9,12 @@
   "homepage": "https://notified.sh",
   "repository": "https://github.com/aymanek/notified.sh",
   "license": "MIT",
-  "keywords": ["notifications", "telegram", "rate-limit", "productivity"],
+  "keywords": [
+    "notifications",
+    "telegram",
+    "rate-limit",
+    "productivity"
+  ],
   "hooks": {
     "StopFailure": [
       {

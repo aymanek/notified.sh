@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.11](https://github.com/aymanek/notified.sh/compare/v0.1.10...v0.1.11) (2026-05-09)
+
+
+### Bug Fixes
+
+* **hook:** retry transcript read on first rate-limit hit (0.1.10) ([a288ba0](https://github.com/aymanek/notified.sh/commit/a288ba002bbae057f96496319593734b9d4735c1))
+
 ## [0.1.10](https://github.com/aymanek/notified.sh/compare/v0.1.9...v0.1.10) (2026-05-09)
 
 
