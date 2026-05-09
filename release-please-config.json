@@ -7,13 +7,7 @@
   "bump-patch-for-minor-pre-major": true,
   "packages": {
     "packages/cli": {
-      "package-name": "notified.sh",
-      "extra-files": [
-        {
-          "type": "generic",
-          "path": "src/version.ts"
-        }
-      ]
+      "package-name": "notified.sh"
     }
   }
 }
