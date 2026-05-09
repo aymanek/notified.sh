@@ -8506,10 +8506,12 @@ async function runPairMessage() {
   let qrSection;
   if (isCli) {
     const qr = await captureQr(session.deep_link);
-    qrSection = `_or scan from a different device_:
-
+    qrSection = "```\n" + qr + `
 \`\`\`
-` + qr + "\n```\n\n";
+
+_Scan the QR with your phone \u2014 if it doesn't render cleanly, use the link below instead._
+
+`;
   } else {
     qrSection = `To scan from another device, run \`notified pair\` in your terminal.
 
@@ -8517,9 +8519,9 @@ async function runPairMessage() {
   }
   const message = `**Pair with Telegram to get a ping the moment your Claude rate limit resets** \u2014 so you know exactly when you can resume.
 
-[Open in Telegram](${session.deep_link})
+` + qrSection + `[Open in Telegram](${session.deep_link})
 
-` + qrSection + `Send \`/start\` to the bot Telegram opens. Pairing finishes automatically.`;
+Send \`/start\` to the bot Telegram opens. Pairing finishes automatically.`;
   process.stdout.write(message + "\n");
   process.stderr.write(session.session_id + "\n");
 }

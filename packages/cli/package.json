@@ -1,6 +1,6 @@
 {
   "name": "notified.sh",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Telegram notifications for Claude Code limit resets.",
   "type": "module",
   "main": "./dist/cli.cjs",
