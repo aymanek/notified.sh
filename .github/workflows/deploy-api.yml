@@ -1,13 +1,10 @@
 name: Deploy API
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
-    paths:
-      - "packages/api/**"
-      - "packages/shared/**"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/deploy-api.yml"
   workflow_dispatch:
 
 concurrency:
@@ -16,28 +13,72 @@ concurrency:
 
 jobs:
   deploy:
+    # Gate on CI success (skip the gate for manual workflow_dispatch runs).
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     environment: production
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Use the SHA that CI just verified, not the latest main.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 2
+
+      - name: Detect API/shared changes
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only HEAD^ HEAD || git ls-tree --name-only -r HEAD)
+          if echo "$changed" | grep -qE '^(packages/api/|packages/shared/|pnpm-lock\.yaml|\.github/workflows/deploy-api\.yml)'; then
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+            echo "No API/shared changes — skipping deploy."
+          fi
 
       - uses: pnpm/action-setup@v4
+        if: steps.changes.outputs.should_deploy == 'true'
         with:
           version: 9.1.2
 
       - uses: actions/setup-node@v4
+        if: steps.changes.outputs.should_deploy == 'true'
         with:
           node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+        if: steps.changes.outputs.should_deploy == 'true'
 
       - run: pnpm -C packages/shared build
+        if: steps.changes.outputs.should_deploy == 'true'
 
       - name: Deploy Worker
+        if: steps.changes.outputs.should_deploy == 'true'
         run: pnpm -C packages/api exec wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Smoke test /v1/health
+        if: steps.changes.outputs.should_deploy == 'true'
+        run: |
+          set -e
+          for attempt in 1 2 3 4 5 6; do
+            sleep 5
+            code=$(curl -sS -o /tmp/health.json -w "%{http_code}" https://api.notified.sh/v1/health || echo "000")
+            if [ "$code" = "200" ] && grep -q '"ok":true' /tmp/health.json; then
+              echo "Health check passed on attempt $attempt:"
+              cat /tmp/health.json
+              exit 0
+            fi
+            echo "Attempt $attempt: HTTP $code, body:"
+            cat /tmp/health.json || true
+          done
+          echo "Smoke test failed after 6 attempts."
+          exit 1
