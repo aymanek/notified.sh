@@ -52,8 +52,8 @@ export async function runPairMessage(): Promise<void> {
   if (isCli) {
     const qr = await captureQr(session.deep_link);
     qrSection =
-      `_Scan the QR with your phone — if it doesn't render cleanly, use the link below instead._\n\n` +
-      "```\n" + qr + "\n```\n\n";
+      "```\n" + qr + "\n```\n\n" +
+      `_Scan the QR with your phone — if it doesn't render cleanly, use the link below instead._\n\n`;
   } else {
     qrSection = `To scan from another device, run \`notified pair\` in your terminal.\n\n`;
   }
