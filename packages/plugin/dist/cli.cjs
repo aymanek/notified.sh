@@ -8835,12 +8835,17 @@ function getUtcOffsetMs(date, tz) {
 
 // src/commands/_hookStop.ts
 var HOOK_TIMEOUT_MS = 3e3;
+var READ_RETRY_DELAYS_MS = [250, 500, 750];
 async function runHookStop() {
   const config = await loadConfig();
   if (!config) return;
   const transcriptPath = await transcriptPathFromStdin() ?? await findMostRecentTranscript();
   if (!transcriptPath) return;
-  const lines = await readRateLimitLines(transcriptPath);
+  let lines = await readRateLimitLines(transcriptPath);
+  for (let i = 0; lines.length === 0 && i < READ_RETRY_DELAYS_MS.length; i++) {
+    await sleep2(READ_RETRY_DELAYS_MS[i]);
+    lines = await readRateLimitLines(transcriptPath);
+  }
   if (lines.length === 0) return;
   const detection = detectRateLimit(lines);
   if (!detection) return;
@@ -8911,6 +8916,9 @@ async function flushPending(state, config, apiBase) {
     }
   }
   state.pending_submit = stillPending;
+}
+function sleep2(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // src/commands/_hookCheckPaired.ts
