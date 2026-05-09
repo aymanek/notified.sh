@@ -51,15 +51,17 @@ export async function runPairMessage(): Promise<void> {
   let qrSection: string;
   if (isCli) {
     const qr = await captureQr(session.deep_link);
-    qrSection = `_or scan from a different device_:\n\n` + "```\n" + qr + "\n```\n\n";
+    qrSection =
+      `_Scan the QR with your phone — if it doesn't render cleanly, use the link below instead._\n\n` +
+      "```\n" + qr + "\n```\n\n";
   } else {
     qrSection = `To scan from another device, run \`notified pair\` in your terminal.\n\n`;
   }
 
   const message =
     `**Pair with Telegram to get a ping the moment your Claude rate limit resets** — so you know exactly when you can resume.\n\n` +
-    `[Open in Telegram](${session.deep_link})\n\n` +
     qrSection +
+    `[Open in Telegram](${session.deep_link})\n\n` +
     `Send \`/start\` to the bot Telegram opens. Pairing finishes automatically.`;
 
   process.stdout.write(message + "\n");
