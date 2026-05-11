@@ -13,16 +13,6 @@ claude plugin install notified@notified
 
 On your next Claude Code session it will detect that you're not paired yet and prompt you to scan a QR / open a Telegram link. Send `/start` to the bot it creates and you're done.
 
-### Standalone CLI
-
-If you'd rather skip the plugin, install the CLI globally and pair manually:
-
-```bash
-npm install -g notified.sh
-notified pair       # opens Telegram link + QR; sends /start to the bot
-notified test       # confirm delivery
-```
-
 ## Slash commands
 
 Once the plugin is installed:
